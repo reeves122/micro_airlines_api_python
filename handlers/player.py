@@ -1,6 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
-from flask import Blueprint, request, make_response
+from flask import Blueprint, make_response
 
 from models.player import Player
 from utils import utils
