@@ -1,10 +1,10 @@
 import logging
+import os
 import unittest
 
 import boto3
 import moto
 
-from micro_airlines_api import app
 from models.player import Player
 
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +13,9 @@ logging.basicConfig(level=logging.INFO)
 class TestPlayer(unittest.TestCase):
 
     def setUp(self):
+        os.environ["AWS_ACCESS_KEY_ID"] = "test"
+        os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+        from micro_airlines_api import app
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
         self.test_player_1 = Player(player_id='test_player_1')

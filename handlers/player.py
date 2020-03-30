@@ -3,6 +3,8 @@ from botocore.exceptions import ClientError
 from flask import Blueprint, make_response
 
 from models.player import Player
+from definitions.cities import cities
+from definitions.planes import planes
 from utils import utils
 
 
@@ -40,7 +42,14 @@ def create_player():
     """
     player_id = utils.get_username()
 
-    player = Player(player_id=player_id)
+    player = Player(player_id=player_id,
+                    balance=1000,
+                    planes={
+
+                    },
+                    cities={
+
+                    })
 
     try:
         table.put_item(Item=player.serialize(),
