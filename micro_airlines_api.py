@@ -5,11 +5,12 @@ import aws_lambda_logging
 from flask import Flask
 
 from _version import __version__
-from handlers import planes, player, cities
+from handlers import planes, player, cities, market
 
 LOGGER = logging.getLogger()
 app = Flask(__name__)
 app.register_blueprint(cities.blueprint)
+app.register_blueprint(market.blueprint)
 app.register_blueprint(planes.blueprint)
 app.register_blueprint(player.blueprint)
 
