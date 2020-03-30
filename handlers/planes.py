@@ -1,3 +1,5 @@
+import logging
+import uuid
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
@@ -10,6 +12,7 @@ blueprint = Blueprint('planes', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table(name='players')
+logger = logging.getLogger()
 
 
 @blueprint.route('/v1/planes', methods=['GET'])
@@ -47,11 +50,14 @@ def create_plane():
     if not plane_def:
         return make_response('Requested plane does not exist', 400)
 
+    # Generate a unique ID for the plane since a player can have multiple of the same plane
+    purchased_plane_id = str(uuid.uuid4())
+
     try:
         result = table.update_item(
             Key={'player_id': player_id},
             UpdateExpression=f"ADD balance :plane_cost "
-                             f"SET planes.{plane_def.plane_id} = :new_plane",
+                             f"SET planes.{purchased_plane_id} = :new_plane",
             ExpressionAttributeValues={
                 ':plane_cost': -int(plane_def.cost),
                 ':new_plane': plane_def.serialize()
@@ -60,9 +66,8 @@ def create_plane():
             ReturnValues="UPDATED_NEW")
 
     except ClientError as e:
-        if 'ConditionalCheckFailedException' in str(e):
-            return make_response('Player has insufficient funds', 400)
-        return make_response('Purchase failed', 500)
+        logger.info(e)
+        return make_response('Purchase failed', 409)
 
     return make_response({
         'balance': result.get('Attributes', {}).get('balance')
