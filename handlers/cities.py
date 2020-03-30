@@ -1,21 +1,16 @@
 import boto3
+from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from flask import Blueprint, make_response, request
 
-from models.player import Player
 from definitions.cities import cities
-from definitions.planes import planes
 from utils import utils
 
 
-blueprint = Blueprint('city', __name__)
+blueprint = Blueprint('cities', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table(name='players')
-
-
-#def add_city_to_player(player_id, city_id):
-
 
 
 @blueprint.route('/v1/cities', methods=['GET'])
@@ -40,7 +35,7 @@ def get_city():
 @blueprint.route('/v1/cities', methods=['POST'])
 def create_city():
     """
-    Create a player
+    Create a city for a player
 
     :return: API Gateway dictionary response
     """
@@ -54,16 +49,23 @@ def create_city():
     if not city_def:
         return make_response('Requested city does not exist', 400)
 
-    result = table.update_item(
-        Key={'player_id': player_id},
-        UpdateExpression="ADD balance :city_cost,",
-        ExpressionAttributeValues={
-            ':city_cost': -int(city_def.cost),
-        },
-        ConditionExpression=f'balance >= {city_def.cost}',
-        ReturnValues="UPDATED_NEW")
+    try:
+        result = table.update_item(
+            Key={'player_id': player_id},
+            UpdateExpression=f"ADD balance :city_cost "
+                             f"SET cities.{city_def.city_id} = :new_city",
+            ExpressionAttributeValues={
+                ':city_cost': -int(city_def.cost),
+                ':new_city': city_def.serialize()
+            },
+            ConditionExpression=Attr('balance').gte(city_def.cost),
+            ReturnValues="UPDATED_NEW")
 
-    print(result)
+    except ClientError as e:
+        if 'ConditionalCheckFailedException' in str(e):
+            return make_response('Player has insufficient funds', 400)
+        return make_response('Purchase failed', 500)
 
-    return make_response('City added for player', 201)
-
+    return make_response({
+        'balance': result.get('Attributes', {}).get('balance')
+    }, 201)

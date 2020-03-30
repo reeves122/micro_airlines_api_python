@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from flask import Blueprint, request, make_response
 
@@ -37,6 +38,7 @@ def create_plane():
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
+
     requested_plane_id = request.args.get('plane')
     if not requested_plane_id:
         return make_response('Query param "plane" is required', 400)
@@ -45,25 +47,23 @@ def create_plane():
     if not plane_def:
         return make_response('Requested plane does not exist', 400)
 
-    result = table.get_item(Key={'player_id': player_id},
-                            AttributesToGet=[
-                                'balance',
-                            ]).get('Item')
-    if not result:
-        return make_response('Player does not exist', 404)
+    try:
+        result = table.update_item(
+            Key={'player_id': player_id},
+            UpdateExpression=f"ADD balance :plane_cost "
+                             f"SET planes.{plane_def.plane_id} = :new_plane",
+            ExpressionAttributeValues={
+                ':plane_cost': -int(plane_def.cost),
+                ':new_plane': plane_def.serialize()
+            },
+            ConditionExpression=Attr('balance').gte(plane_def.cost),
+            ReturnValues="UPDATED_NEW")
 
-    player_balance = result.get('balance')
-    if plane_def.cost > player_balance:
-        return make_response('Player cannot afford this plane', 400)
+    except ClientError as e:
+        if 'ConditionalCheckFailedException' in str(e):
+            return make_response('Player has insufficient funds', 400)
+        return make_response('Purchase failed', 500)
 
-    result = table.update_item(Key={'player_id': player_id},
-                               UpdateExpression="set balance = :new_balance, "
-                                                "planes.a123=:new_plane",
-                               ExpressionAttributeValues={
-                                    ':new_balance': 0,
-                                    ':new_plane': plane_def.serialize(),
-                            },
-                            ReturnValues="UPDATED_NEW")
-    print(result)
-
-    return make_response('Plane added for player', 201)
+    return make_response({
+        'balance': result.get('Attributes', {}).get('balance')
+    }, 201)
