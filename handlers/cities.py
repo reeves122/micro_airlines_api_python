@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
@@ -6,11 +8,11 @@ from flask import Blueprint, make_response, request
 from definitions.cities import cities
 from utils import utils
 
-
 blueprint = Blueprint('cities', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table(name='players')
+logger = logging.getLogger()
 
 
 @blueprint.route('/v1/cities', methods=['GET'])
@@ -58,13 +60,13 @@ def create_city():
                 ':city_cost': -int(city_def.cost),
                 ':new_city': city_def.serialize()
             },
-            ConditionExpression=Attr('balance').gte(city_def.cost),
+            ConditionExpression=(Attr('balance').gte(city_def.cost) &
+                                 Attr(f'cities.{city_def.city_id}').not_exists()),
             ReturnValues="UPDATED_NEW")
 
     except ClientError as e:
-        if 'ConditionalCheckFailedException' in str(e):
-            return make_response('Player has insufficient funds', 400)
-        return make_response('Purchase failed', 500)
+        logger.info(e)
+        return make_response('Purchase failed', 409)
 
     return make_response({
         'balance': result.get('Attributes', {}).get('balance')

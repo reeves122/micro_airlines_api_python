@@ -114,8 +114,8 @@ class TestCities(unittest.TestCase):
     def test_cities_post_player_not_exist(self):
         self._create_table()
         result = self.http_client.post('/v1/cities?city=0')
-        self.assertEqual('Player has insufficient funds', result.get_data().decode('utf-8'))
-        self.assertEqual(400, result.status_code)
+        self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
+        self.assertEqual(409, result.status_code)
 
     @moto.mock_dynamodb2
     def test_cities_post_city_cant_afford(self):
@@ -124,5 +124,19 @@ class TestCities(unittest.TestCase):
 
         # Make the request and assert the response
         result = self.http_client.post('/v1/cities?city=0')
-        self.assertEqual('Player has insufficient funds', result.get_data().decode('utf-8'))
-        self.assertEqual(400, result.status_code)
+        self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
+        self.assertEqual(409, result.status_code)
+
+    @moto.mock_dynamodb2
+    def test_cities_post_city_already_owned(self):
+        self._create_table()
+        self._populate_table(balance=90000)
+
+        # Purchase the city first
+        result = self.http_client.post('/v1/cities?city=0')
+        self.assertEqual(201, result.status_code)
+
+        # Try to purchase the same city again
+        result = self.http_client.post('/v1/cities?city=0')
+        self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
+        self.assertEqual(409, result.status_code)
