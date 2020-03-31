@@ -64,12 +64,12 @@ class TestPlanes(unittest.TestCase):
         table.put_item(Item={
             'player_id': self.player_name,
             'planes': {
-                '123': planes['0'].serialize()
+                '123': planes['a0'].serialize()
             }
         })
         result = self.http_client.get('/v1/planes')
         self.assertEqual({
-            '123': planes['0'].serialize()
+            '123': planes['a0'].serialize()
         }, result.get_json())
         self.assertEqual(200, result.status_code)
 
@@ -85,7 +85,7 @@ class TestPlanes(unittest.TestCase):
         self._create_table()
         self._populate_table(balance=300)
 
-        result = self.http_client.post('/v1/planes?plane=0')
+        result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual({
             'balance': 100
         }, result.get_json())
@@ -96,20 +96,20 @@ class TestPlanes(unittest.TestCase):
         result = table.get_item(Key={'player_id': self.player_name}).get('Item')
         for plane_id, plane in result['planes'].items():
             self.assertEqual(36, len(plane_id))
-            self.assertEqual(planes['0'].serialize(), plane)
+            self.assertEqual(planes['a0'].serialize(), plane)
 
     @moto.mock_dynamodb2
     def test_planes_post_multiple(self):
         self._create_table()
         self._populate_table(balance=600)
 
-        result = self.http_client.post('/v1/planes?plane=0')
+        result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual({
             'balance': 400
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
-        result = self.http_client.post('/v1/planes?plane=0')
+        result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual({
             'balance': 200
         }, result.get_json())
@@ -137,7 +137,7 @@ class TestPlanes(unittest.TestCase):
     @moto.mock_dynamodb2
     def test_planes_post_player_not_exist(self):
         self._create_table()
-        result = self.http_client.post('/v1/planes?plane=0')
+        result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(409, result.status_code)
 
@@ -147,6 +147,6 @@ class TestPlanes(unittest.TestCase):
         self._populate_table(balance=100)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/planes?plane=0')
+        result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(409, result.status_code)

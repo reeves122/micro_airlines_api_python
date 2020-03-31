@@ -1,17 +1,19 @@
 import logging
+import time
 
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from flask import Blueprint, make_response, request
 
+from config import config
 from definitions.cities import cities
 from utils import utils
 
 blueprint = Blueprint('cities', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table(name='players')
+table = dynamodb.Table(name=config.dynamodb_players_table)
 logger = logging.getLogger()
 
 
@@ -71,3 +73,51 @@ def create_city():
     return make_response({
         'balance': result.get('Attributes', {}).get('balance')
     }, 201)
+
+
+@blueprint.route('/v1/cities/<string:city_id>/jobs', methods=['GET'])
+def get_player_city_jobs(city_id):
+    """
+    Get jobs for a player's city
+
+    :return: API Gateway dictionary response
+    """
+    player_id = utils.get_username()
+
+    result = table.get_item(Key={'player_id': player_id},
+                            AttributesToGet=[
+                                'cities',
+                            ]).get('Item')
+    if not result:
+        return make_response('Player does not exist', 404)
+
+    player_cities = result.get('cities', {})
+    if not player_cities or len(player_cities) < 2:
+        return make_response('Player does not own enough cities', 400)
+
+    player_city = player_cities.get(city_id)
+    if not player_city:
+        return make_response('Player does not own city', 400)
+
+    if player_city.get('jobs', {}).get('expires', 0) > time.time():
+        return make_response({
+            'balance': player_city.get('jobs')
+        }, 200)
+
+    new_jobs = utils.generate_random_jobs(player_cities, city_id)
+    jobs_expire = int(time.time()) + 240
+
+    table.update_item(
+        Key={'player_id': player_id},
+        UpdateExpression=f"SET cities.{city_id}.jobs = :new_jobs, "
+                         f"cities.{city_id}.jobs_expire = :jobs_expire",
+        ExpressionAttributeValues={
+            ':new_jobs': new_jobs,
+            ':jobs_expire': jobs_expire
+        },
+        ReturnValues="UPDATED_NEW")
+
+    return make_response({
+        'new_jobs': new_jobs,
+        'jobs_expire': jobs_expire
+    }, 200)

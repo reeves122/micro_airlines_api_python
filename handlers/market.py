@@ -1,19 +1,14 @@
-import time
-
 import boto3
-from boto3.dynamodb.conditions import Attr
-from botocore.exceptions import ClientError
-from flask import Blueprint, make_response, request
+from flask import Blueprint, make_response
 
 from definitions.cities import cities
 from definitions.planes import planes
-from utils import utils
-
+from config import config
 
 blueprint = Blueprint('market', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table(name='players')
+table = dynamodb.Table(name=config.dynamodb_players_table)
 
 
 @blueprint.route('/v1/market/cities', methods=['GET'])

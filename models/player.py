@@ -8,3 +8,8 @@ class Player(BaseModel):
         self.balance = balance
         self.cities = cities
         self.planes = planes
+
+        if not planes:
+            self.planes = {}
+        if not cities:
+            self.cities = {}

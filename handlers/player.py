@@ -4,12 +4,12 @@ from flask import Blueprint, make_response
 
 from models.player import Player
 from utils import utils
-
+from config import config
 
 blueprint = Blueprint('player', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table(name='players')
+table = dynamodb.Table(name=config.dynamodb_players_table)
 
 
 @blueprint.route('/v1/player', methods=['GET'])

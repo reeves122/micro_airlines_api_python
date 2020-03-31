@@ -1,6 +1,7 @@
 import logging
 import os
 import unittest
+import time
 
 import boto3
 import moto
@@ -85,7 +86,7 @@ class TestCities(unittest.TestCase):
         self._populate_table(balance=11000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities?city=0')
+        result = self.http_client.post('/v1/cities?city=a0')
         self.assertEqual({
             'balance': 1000
         }, result.get_json())
@@ -94,7 +95,7 @@ class TestCities(unittest.TestCase):
         # Query the table to validate the result
         table = self.dynamodb.Table(name='players')
         result = table.get_item(Key={'player_id': self.player_name}).get('Item')
-        self.assertEqual(cities['0'].serialize(), result['cities']['0'])
+        self.assertEqual(cities['a0'].serialize(), result['cities']['a0'])
 
     @moto.mock_dynamodb2
     def test_cities_post_missing_arg(self):
@@ -113,7 +114,7 @@ class TestCities(unittest.TestCase):
     @moto.mock_dynamodb2
     def test_cities_post_player_not_exist(self):
         self._create_table()
-        result = self.http_client.post('/v1/cities?city=0')
+        result = self.http_client.post('/v1/cities?city=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(409, result.status_code)
 
@@ -123,7 +124,7 @@ class TestCities(unittest.TestCase):
         self._populate_table(balance=1000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities?city=0')
+        result = self.http_client.post('/v1/cities?city=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(409, result.status_code)
 
@@ -133,10 +134,39 @@ class TestCities(unittest.TestCase):
         self._populate_table(balance=90000)
 
         # Purchase the city first
-        result = self.http_client.post('/v1/cities?city=0')
+        result = self.http_client.post('/v1/cities?city=a0')
         self.assertEqual(201, result.status_code)
 
         # Try to purchase the same city again
-        result = self.http_client.post('/v1/cities?city=0')
+        result = self.http_client.post('/v1/cities?city=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(409, result.status_code)
+
+    @moto.mock_dynamodb2
+    def test_get_player_city_jobs(self):
+        self._create_table()
+        table = self.dynamodb.Table(name='players')
+        table.put_item(Item={
+            'player_id': self.player_name,
+            'cities': {
+                '0': {
+                    'name': 'foo'
+                },
+                '1': {
+                    'name': 'foo'
+                },
+                '2': {
+                    'name': 'foo'
+                }
+            }
+        })
+
+        result = self.http_client.get('/v1/cities/0/jobs')
+        self.assertEqual(200, result.status_code)
+        self.assertEqual(30, len(result.get_json()['new_jobs']))
+        jobs_expire = result.get_json()['jobs_expire']
+        self.assertLess(time.time(), jobs_expire)
+
+        # Make the same call again to see if cached jobs are used
+        result = self.http_client.get('/v1/cities/0/jobs')
+        self.assertEqual(jobs_expire, result.get_json()['jobs_expire'])

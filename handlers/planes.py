@@ -7,11 +7,12 @@ from flask import Blueprint, request, make_response
 
 from definitions.planes import planes
 from utils import utils
+from config import config
 
 blueprint = Blueprint('planes', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table(name='players')
+table = dynamodb.Table(name=config.dynamodb_players_table)
 logger = logging.getLogger()
 
 
