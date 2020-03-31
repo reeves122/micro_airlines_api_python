@@ -2,11 +2,11 @@ import logging
 import os
 import unittest
 
-import boto3
 import moto
 
 from definitions.planes import planes
-
+from tests import shared_test_utils
+from utils import utils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,77 +31,45 @@ class TestPlanes(unittest.TestCase):
         }
         self.http_client.environ_base['awsgi.event'] = self.request
 
-    def _create_table(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-        self.dynamodb.create_table(
-            TableName='players',
-            AttributeDefinitions=[
-                {
-                    'AttributeName': 'player_id',
-                    'AttributeType': 'S'
-                }
-            ],
-            KeySchema=[
-                {
-                    'AttributeName': 'player_id',
-                    'KeyType': 'HASH'
-                }
-            ]
-        )
-
-    def _populate_table(self, balance=100000):
-        table = self.dynamodb.Table(name='players')
-        table.put_item(Item={
-            'player_id': self.player_name,
-            'balance': balance,
-            'planes': {}
-        })
-
     @moto.mock_dynamodb2
     def test_planes_get(self):
-        self._create_table()
-        table = self.dynamodb.Table(name='players')
-        table.put_item(Item={
-            'player_id': self.player_name,
-            'planes': {
-                '123': planes['a0'].serialize()
-            }
-        })
+        shared_test_utils.create_table()
+        utils.create_player(player_id=self.player_name, balance=100000)
+        utils.add_plane_to_player(player_id=self.player_name, plane_id='a1')
         result = self.http_client.get('/v1/planes')
-        self.assertEqual({
-            '123': planes['a0'].serialize()
-        }, result.get_json())
+
+        _, first_plane = result.get_json()['planes'].popitem()
+
+        self.assertEqual(planes['a1'].serialize(), first_plane)
         self.assertEqual(200, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_get_not_exist(self):
-        self._create_table()
+        shared_test_utils.create_table()
         result = self.http_client.get('/v1/planes')
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(404, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_post(self):
-        self._create_table()
-        self._populate_table(balance=300)
+        shared_test_utils.create_table()
+        utils.create_player(player_id=self.player_name, balance=300)
 
-        result = self.http_client.post('/v1/planes?plane=a0')
+        result = self.http_client.post('/v1/planes?plane=a1')
         self.assertEqual({
             'balance': 100
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
         # Query the table to validate the result
-        table = self.dynamodb.Table(name='players')
-        result = table.get_item(Key={'player_id': self.player_name}).get('Item')
-        for plane_id, plane in result['planes'].items():
-            self.assertEqual(36, len(plane_id))
-            self.assertEqual(planes['a0'].serialize(), plane)
+        _, result = utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
+        _, first_plane = result['planes'].popitem()
+        self.assertEqual(planes['a1'].serialize(), first_plane)
 
     @moto.mock_dynamodb2
     def test_planes_post_multiple(self):
-        self._create_table()
-        self._populate_table(balance=600)
+        shared_test_utils.create_table()
+        utils.create_player(player_id=self.player_name, balance=600)
 
         result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual({
@@ -116,37 +84,36 @@ class TestPlanes(unittest.TestCase):
         self.assertEqual(201, result.status_code)
 
         # Query the table to validate the result
-        table = self.dynamodb.Table(name='players')
-        result = table.get_item(Key={'player_id': self.player_name}).get('Item')
-        self.assertEqual(2, len(result['planes']))
+        _, result = utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
+        self.assertEqual(2, len(result['planes'].keys()))
 
     @moto.mock_dynamodb2
     def test_planes_post_missing_arg(self):
-        self._create_table()
+        shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes')
         self.assertEqual('Query param "plane" is required', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_post_plane_not_exist(self):
-        self._create_table()
+        shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes?plane=foobar123')
-        self.assertEqual('Requested plane does not exist', result.get_data().decode('utf-8'))
+        self.assertEqual('Plane does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_post_player_not_exist(self):
-        self._create_table()
+        shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
-        self.assertEqual(409, result.status_code)
+        self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_post_plane_cant_afford(self):
-        self._create_table()
-        self._populate_table(balance=100)
+        shared_test_utils.create_table()
+        utils.create_player(player_id=self.player_name, balance=100)
 
         # Make the request and assert the response
         result = self.http_client.post('/v1/planes?plane=a0')
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
-        self.assertEqual(409, result.status_code)
+        self.assertEqual(400, result.status_code)

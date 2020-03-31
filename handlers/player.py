@@ -1,8 +1,7 @@
 import boto3
-from botocore.exceptions import ClientError
+
 from flask import Blueprint, make_response
 
-from models.player import Player
 from utils import utils
 from config import config
 
@@ -21,12 +20,12 @@ def get_player():
     """
     player_id = utils.get_username()
 
-    success, data = utils.get_player_attributes(player_id=player_id,
-                                                attributes_to_get=['player_id'])
+    success, result = utils.get_player_attributes(player_id=player_id,
+                                                  attributes_to_get=['player_id'])
     if success:
-        return make_response(data, 200)
+        return make_response(result, 200)
     else:
-        return make_response(data, 404)
+        return make_response(result, 404)
 
 
 @blueprint.route('/v1/player', methods=['POST'])

@@ -1,18 +1,9 @@
 import logging
-import uuid
-import boto3
-from boto3.dynamodb.conditions import Attr
-from botocore.exceptions import ClientError
 from flask import Blueprint, request, make_response
 
-from definitions.planes import planes
 from utils import utils
-from config import config
 
 blueprint = Blueprint('planes', __name__)
-
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table(name=config.dynamodb_players_table)
 logger = logging.getLogger()
 
 
@@ -24,14 +15,12 @@ def get_planes():
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
-    result = table.get_item(Key={'player_id': player_id},
-                            AttributesToGet=[
-                                'planes',
-                            ]).get('Item')
-    if not result:
-        return make_response('Player does not exist', 404)
-
-    return make_response(result.get('planes', {}), 200)
+    success, result = utils.get_player_attributes(player_id=player_id,
+                                                  attributes_to_get=['planes'])
+    if success:
+        return make_response(result, 200)
+    else:
+        return make_response(result, 404)
 
 
 @blueprint.route('/v1/planes', methods=['POST'])
@@ -47,29 +36,10 @@ def create_plane():
     if not requested_plane_id:
         return make_response('Query param "plane" is required', 400)
 
-    plane_def = planes.get(requested_plane_id)
-    if not plane_def:
-        return make_response('Requested plane does not exist', 400)
-
-    # Generate a unique ID for the plane since a player can have multiple of the same plane
-    purchased_plane_id = str(uuid.uuid4())
-
-    try:
-        result = table.update_item(
-            Key={'player_id': player_id},
-            UpdateExpression=f"ADD balance :plane_cost "
-                             f"SET planes.{purchased_plane_id} = :new_plane",
-            ExpressionAttributeValues={
-                ':plane_cost': -int(plane_def.cost),
-                ':new_plane': plane_def.serialize()
-            },
-            ConditionExpression=Attr('balance').gte(plane_def.cost),
-            ReturnValues="UPDATED_NEW")
-
-    except ClientError as e:
-        logger.info(e)
-        return make_response('Purchase failed', 409)
-
-    return make_response({
-        'balance': result.get('Attributes', {}).get('balance')
-    }, 201)
+    success, result = utils.add_plane_to_player(player_id=player_id, plane_id=requested_plane_id)
+    if success:
+        return make_response({
+            'balance': result.get('balance')
+        }, 201)
+    else:
+        return make_response(result, 400)

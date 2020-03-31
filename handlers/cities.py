@@ -2,12 +2,9 @@ import logging
 import time
 
 import boto3
-from boto3.dynamodb.conditions import Attr
-from botocore.exceptions import ClientError
 from flask import Blueprint, make_response, request
 
 from config import config
-from definitions.cities import cities
 from utils import utils
 
 blueprint = Blueprint('cities', __name__)
@@ -26,14 +23,12 @@ def get_player_cities():
     """
     player_id = utils.get_username()
 
-    result = table.get_item(Key={'player_id': player_id},
-                            AttributesToGet=[
-                                'cities',
-                            ]).get('Item')
-    if not result:
-        return make_response('Player does not exist', 404)
-
-    return make_response(result.get('cities', {}), 200)
+    success, result = utils.get_player_attributes(player_id=player_id,
+                                                  attributes_to_get=['cities'])
+    if success:
+        return make_response(result, 200)
+    else:
+        return make_response(result, 404)
 
 
 @blueprint.route('/v1/cities', methods=['POST'])
@@ -49,30 +44,13 @@ def create_city():
     if not requested_city_id:
         return make_response('Query param "city" is required', 400)
 
-    city_def = cities.get(requested_city_id)
-    if not city_def:
-        return make_response('Requested city does not exist', 400)
-
-    try:
-        result = table.update_item(
-            Key={'player_id': player_id},
-            UpdateExpression=f"ADD balance :city_cost "
-                             f"SET cities.{city_def.city_id} = :new_city",
-            ExpressionAttributeValues={
-                ':city_cost': -int(city_def.cost),
-                ':new_city': city_def.serialize()
-            },
-            ConditionExpression=(Attr('balance').gte(city_def.cost) &
-                                 Attr(f'cities.{city_def.city_id}').not_exists()),
-            ReturnValues="UPDATED_NEW")
-
-    except ClientError as e:
-        logger.info(e)
-        return make_response('Purchase failed', 409)
-
-    return make_response({
-        'balance': result.get('Attributes', {}).get('balance')
-    }, 201)
+    success, result = utils.add_city_to_player(player_id=player_id, city_id=requested_city_id)
+    if success:
+        return make_response({
+            'balance': result.get('balance')
+        }, 201)
+    else:
+        return make_response(result, 400)
 
 
 @blueprint.route('/v1/cities/<string:city_id>/jobs', methods=['GET'])
@@ -84,12 +62,10 @@ def get_player_city_jobs(city_id):
     """
     player_id = utils.get_username()
 
-    result = table.get_item(Key={'player_id': player_id},
-                            AttributesToGet=[
-                                'cities',
-                            ]).get('Item')
-    if not result:
-        return make_response('Player does not exist', 404)
+    success, result = utils.get_player_attributes(player_id=player_id,
+                                                  attributes_to_get=['cities'])
+    if not success:
+        return make_response(result, 400)
 
     player_cities = result.get('cities', {})
     if not player_cities or len(player_cities) < 2:
@@ -99,9 +75,10 @@ def get_player_city_jobs(city_id):
     if not player_city:
         return make_response('Player does not own city', 400)
 
-    if player_city.get('jobs', {}).get('expires', 0) > time.time():
+    if player_city.get('jobs_expire', 0) > time.time():
         return make_response({
-            'balance': player_city.get('jobs')
+            'jobs': player_city.get('jobs'),
+            'jobs_expire': player_city.get('jobs_expire')
         }, 200)
 
     new_jobs = utils.generate_random_jobs(player_cities, city_id)
