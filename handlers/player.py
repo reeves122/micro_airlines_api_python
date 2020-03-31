@@ -21,14 +21,12 @@ def get_player():
     """
     player_id = utils.get_username()
 
-    result = table.get_item(Key={'player_id': player_id},
-                            AttributesToGet=[
-                                'player_id',
-                            ]).get('Item')
-    if result:
-        return make_response(result, 200)
+    success, data = utils.get_player_attributes(player_id=player_id,
+                                                attributes_to_get=['player_id'])
+    if success:
+        return make_response(data, 200)
     else:
-        return make_response('Player does not exist', 404)
+        return make_response(data, 404)
 
 
 @blueprint.route('/v1/player', methods=['POST'])
@@ -40,13 +38,8 @@ def create_player():
     """
     player_id = utils.get_username()
 
-    player = Player(player_id=player_id,
-                    balance=100000)
-    try:
-        table.put_item(Item=player.serialize(),
-                       ConditionExpression='attribute_not_exists(player_id)')
-    except ClientError as e:
-        if 'ConditionalCheckFailedException' in str(e):
-            return make_response('Player already exists', 400)
+    created, message = utils.create_player(player_id, balance=100000)
+    if not created:
+        return make_response(message, 400)
 
-    return make_response('Player created', 201)
+    return make_response(message, 201)
