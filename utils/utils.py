@@ -91,10 +91,12 @@ def add_city_to_player(player_id, city_id):
     return True, result.get('Attributes', {})
 
 
-def add_plane_to_player(player_id, plane_id):
+def add_plane_to_player(player_id, plane_id, current_city_id=None):
     plane_object = planes.get(plane_id)
     if not plane_object:
         return False, 'Plane does not exist'
+
+    plane_object.current_city_id = current_city_id
 
     # Generate a unique ID for the plane since a player can have multiple of the same plane
     purchased_plane_id = generate_random_string()
@@ -114,5 +116,22 @@ def add_plane_to_player(player_id, plane_id):
     except ClientError as e:
         logger.info(e)
         return False, 'Purchase failed'
+
+    return True, result.get('Attributes', {})
+
+
+def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
+    try:
+        result = table.update_item(
+            Key={'player_id': player_id},
+            UpdateExpression=f"SET planes.{plane_id}.loaded_jobs = :new_jobs",
+            ExpressionAttributeValues={
+                ':new_jobs': list_of_jobs
+            },
+            ReturnValues="UPDATED_NEW")
+
+    except ClientError as e:
+        logger.info(e)
+        return False, 'Failed to load jobs onto plane'
 
     return True, result.get('Attributes', {})

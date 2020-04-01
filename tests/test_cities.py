@@ -59,7 +59,7 @@ class TestCities(unittest.TestCase):
         utils.create_player(player_id=self.player_name, balance=11000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities?city=a0')
+        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual({
             'balance': 1000
         }, result.get_json())
@@ -70,23 +70,22 @@ class TestCities(unittest.TestCase):
         self.assertEqual(cities['a0'].serialize(), result['cities']['a0'])
 
     @moto.mock_dynamodb2
-    def test_cities_post_missing_arg(self):
+    def test_cities_post_missing_body(self):
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/cities')
-        self.assertEqual('Query param "city" is required', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_cities_post_city_not_exist(self):
         shared_test_utils.create_table()
-        result = self.http_client.post('/v1/cities?city=foobar123')
+        result = self.http_client.post('/v1/cities?city', json={'city': 'foobar123'})
         self.assertEqual('City does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_cities_post_player_not_exist(self):
         shared_test_utils.create_table()
-        result = self.http_client.post('/v1/cities?city=a0')
+        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -96,7 +95,7 @@ class TestCities(unittest.TestCase):
         utils.create_player(player_id=self.player_name, balance=1000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities?city=a0')
+        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -106,11 +105,11 @@ class TestCities(unittest.TestCase):
         utils.create_player(player_id=self.player_name, balance=100000)
 
         # Purchase the city first
-        result = self.http_client.post('/v1/cities?city=a1')
+        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual(201, result.status_code)
 
         # Try to purchase the same city again
-        result = self.http_client.post('/v1/cities?city=a1')
+        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 

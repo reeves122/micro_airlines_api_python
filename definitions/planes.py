@@ -7,7 +7,7 @@ planes = {
                 speed=1,
                 weight=1,
                 capacity_type='P',
-                capacity=1,
+                capacity=4,
                 flight_range=1,
                 size_class=1),
 
@@ -17,7 +17,7 @@ planes = {
                 speed=1,
                 weight=1,
                 capacity_type='C',
-                capacity=1,
+                capacity=4,
                 flight_range=1,
                 size_class=1)
 }

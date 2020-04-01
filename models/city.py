@@ -1,3 +1,5 @@
+import time
+
 from models.base_model import BaseModel
 
 
@@ -13,3 +15,5 @@ class City(BaseModel):
         self.population = population
         self.layover_size = layover_size
         self.layovers = None
+        self.jobs = {}
+        self.jobs_expire = int(time.time())

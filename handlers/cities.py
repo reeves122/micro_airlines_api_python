@@ -40,9 +40,7 @@ def create_city():
     """
     player_id = utils.get_username()
 
-    requested_city_id = request.args.get('city')
-    if not requested_city_id:
-        return make_response('Query param "city" is required', 400)
+    requested_city_id = request.get_json(force=True).get('city')
 
     success, result = utils.add_city_to_player(player_id=player_id, city_id=requested_city_id)
     if success:
@@ -75,7 +73,7 @@ def get_player_city_jobs(city_id):
     if not player_city:
         return make_response('Player does not own city', 400)
 
-    if player_city.get('jobs_expire', 0) > time.time():
+    if player_city.get('jobs_expire') > time.time():
         return make_response({
             'jobs': player_city.get('jobs'),
             'jobs_expire': player_city.get('jobs_expire')

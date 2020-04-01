@@ -36,7 +36,7 @@ class TestPlayer(unittest.TestCase):
         shared_test_utils.create_table()
         utils.create_player(player_id='test_player_1', balance=100000)
         result = self.http_client.get('/v1/player')
-        self.assertEqual(self.test_player_1.serialize(), result.get_json())
+        self.assertEqual({'player_id': 'test_player_1'}, result.get_json())
         self.assertEqual(200, result.status_code)
 
     @moto.mock_dynamodb2

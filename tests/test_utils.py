@@ -127,3 +127,33 @@ class TestUtils(unittest.TestCase):
         success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1')
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
+
+    @moto.mock_dynamodb2
+    def test_add_jobs_to_plane(self):
+        shared_test_utils.create_table()
+        utils.create_player(player_id='foo', balance=100000)
+        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a2')
+        utils.add_city_to_player(player_id='foo', city_id='a3')
+
+        # Get the new cities and plane added to the player
+        _, result = utils.get_player_attributes(player_id='foo',
+                                                attributes_to_get=['cities', 'planes'])
+
+        plane_1_id, _ = result.get('planes').popitem()
+        player_cities = result.get('cities')
+
+        # Generate some random jobs
+        jobs = utils.generate_random_jobs(player_cities=player_cities, current_city_id='a1')
+
+        # Add the jobs to the plane
+        success, _ = utils.add_jobs_to_plane(player_id='foo',
+                                             plane_id=plane_1_id, list_of_jobs=jobs)
+        self.assertTrue(success)
+
+        # Check the jobs added to the plane
+        _, result = utils.get_player_attributes(player_id='foo',
+                                                attributes_to_get=['planes'])
+
+        self.assertEqual(30, len(result['planes'][plane_1_id]['loaded_jobs']))
