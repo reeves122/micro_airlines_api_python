@@ -50,7 +50,8 @@ class TestPlayer(unittest.TestCase):
     def test_player_post(self):
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/player')
-        self.assertEqual('Player "test_player_1" created', result.get_data().decode('utf-8'))
+        self.assertEqual('Player "test_player_1" created with balance: 100000',
+                         result.get_data().decode('utf-8'))
         self.assertEqual(201, result.status_code)
 
     @moto.mock_dynamodb2

@@ -111,10 +111,13 @@ def add_city_to_player(player_id, city_id):
     return True, attributes
 
 
-def add_plane_to_player(player_id, plane_id, current_city_id=None):
+def add_plane_to_player(player_id, plane_id, current_city_id):
     plane_object = planes.get(plane_id)
     if not plane_object:
         return False, 'Plane does not exist'
+
+    if not current_city_id:
+        return False, 'Invalid city id'
 
     plane_object.current_city_id = current_city_id
 

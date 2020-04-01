@@ -36,7 +36,7 @@ class TestPlanes(unittest.TestCase):
     def test_planes_get(self):
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_plane_to_player(player_id=self.player_name, plane_id='a1')
+        utils.add_plane_to_player(player_id=self.player_name, plane_id='a1', current_city_id='a1')
         result = self.http_client.get('/v1/planes')
 
         _, first_plane = result.get_json()['planes'].popitem()
@@ -104,7 +104,7 @@ class TestPlanes(unittest.TestCase):
     @moto.mock_dynamodb2
     def test_planes_post_player_not_exist(self):
         shared_test_utils.create_table()
-        result = self.http_client.post('/v1/planes', json={'plane': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -114,7 +114,7 @@ class TestPlanes(unittest.TestCase):
         utils.create_player(player_id=self.player_name, balance=100)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/planes', json={'plane': 'a0'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'a1'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 

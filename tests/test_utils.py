@@ -141,7 +141,8 @@ class TestUtils(unittest.TestCase):
     def test_add_plane_to_player(self):
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=200)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1')
+        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
+                                                    current_city_id='a1')
         self.assertTrue(success)
         self.assertEqual(0, result.get('balance'))
 
@@ -149,7 +150,8 @@ class TestUtils(unittest.TestCase):
     def test_add_plane_to_player_not_exist(self):
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=10000)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='foo123')
+        success, result = utils.add_plane_to_player(player_id='foo', plane_id='foo123',
+                                                    current_city_id='a1')
         self.assertFalse(success)
         self.assertEqual('Plane does not exist', result)
 
@@ -157,7 +159,8 @@ class TestUtils(unittest.TestCase):
     def test_add_plane_to_player_cant_afford(self):
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=199)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1')
+        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
+                                                    current_city_id='a1')
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
 
