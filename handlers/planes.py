@@ -17,6 +17,7 @@ def get_planes():
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
+    logger.info(f'Received GET request from player: "{player_id}" for path: "/v1/planes"')
     success, result = utils.get_player_attributes(player_id=player_id,
                                                   attributes_to_get=['planes'])
     if success:
@@ -34,6 +35,8 @@ def create_plane():
     """
     player_id = utils.get_username()
     body = request.get_json(force=True)
+    logger.info(f'Received POST request from player: "{player_id}" '
+                f'for path: "/v1/planes" with body: "{body}"')
     requested_plane_id = body.get('plane')
     starting_city_id = body.get('city')
 
@@ -56,6 +59,8 @@ def update_plane(plane_id):
     """
     player_id = utils.get_username()
     body = request.get_json(force=True)
+    logger.info(f'Received PUT request from player: "{player_id}" '
+                f'for path: "/v1/planes/{plane_id}" with body: "{body}"')
 
     if not any(value for _, value in body.items()):
         return make_response('No changes specified', 400)

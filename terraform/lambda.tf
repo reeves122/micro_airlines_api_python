@@ -46,6 +46,15 @@ resource "aws_iam_role_policy" "micro_airlines_api_lambda_role_policy" {
         {
             "Effect": "Allow",
             "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
                 "dynamodb:PutItem",
                 "dynamodb:GetItem",
                 "dynamodb:DeleteItem",
@@ -62,3 +71,9 @@ resource "aws_iam_role_policy" "micro_airlines_api_lambda_role_policy" {
 }
     EOF
 }
+
+resource "aws_cloudwatch_log_group" "lambda_proxy_log_group" {
+  name              = "/aws/lambda/${var.name}-${var.env}"
+  retention_in_days = "3"
+}
+

@@ -1,6 +1,9 @@
 import logging
+import os
 import unittest
 
+from flask import request
+from flask import Flask
 import moto
 
 from definitions.cities import cities
@@ -11,6 +14,36 @@ logging.basicConfig(level=logging.INFO)
 
 
 class TestUtils(unittest.TestCase):
+
+    def setUp(self):
+        os.environ["AWS_ACCESS_KEY_ID"] = "test"
+        os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+        self.player_name = 'test_player_1'
+        self.http_client = Flask(__name__)
+
+    def test_get_username_cognito(self):
+        with self.http_client.test_request_context():
+            request.environ['awsgi.event'] = {
+                'requestContext': {
+                    'authorizer': {
+                        'claims': {
+                            'cognito:username': self.player_name
+                        }
+                    }
+                }
+            }
+            self.assertEqual(self.player_name, utils.get_username())
+
+    def test_get_username_apikey(self):
+        with self.http_client.test_request_context():
+            request.environ['awsgi.event'] = {
+                'requestContext': {
+                    'identity': {
+                        'apiKey': 'abc123'
+                    }
+                }
+            }
+            self.assertEqual('abc123', utils.get_username())
 
     def test_generate_random_jobs(self):
         player_cities = {
@@ -37,14 +70,14 @@ class TestUtils(unittest.TestCase):
         shared_test_utils.create_table()
         created, message = utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
-        self.assertEqual('Player "foo" created', message)
+        self.assertEqual('Player "foo" created with balance: 10000', message)
 
     @moto.mock_dynamodb2
     def test_create_player_already_exists(self):
         shared_test_utils.create_table()
         created, message = utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
-        self.assertEqual('Player "foo" created', message)
+        self.assertEqual('Player "foo" created with balance: 10000', message)
 
         created, message = utils.create_player(player_id='foo', balance=10000)
         self.assertFalse(created)

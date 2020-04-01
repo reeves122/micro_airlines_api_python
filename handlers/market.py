@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 from flask import Blueprint, make_response
 
@@ -9,6 +11,7 @@ blueprint = Blueprint('market', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table(name=config.dynamodb_players_table)
+logger = logging.getLogger()
 
 
 @blueprint.route('/v1/market/cities', methods=['GET'])
@@ -18,6 +21,7 @@ def get_available_cities():
 
     :return: API Gateway dictionary response
     """
+    logger.info(f'Received GET request for path: "/v1/market/cities"')
     cities_serialized = [city.serialize() for city_id, city in cities.items()]
     return make_response({'cities': cities_serialized}, 200)
 
@@ -29,6 +33,7 @@ def get_available_planes():
 
     :return: API Gateway dictionary response
     """
+    logger.info(f'Received GET request for path: "/v1/market/planes"')
     # TODO: Implement time-based market for planes
     # player_id = utils.get_username()
     #

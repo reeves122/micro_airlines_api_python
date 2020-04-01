@@ -19,11 +19,24 @@ logger = logging.getLogger()
 
 
 def get_username():
-    return request.environ.get('awsgi.event', {}).get('requestContext', {}).get(
+    username = request.environ.get('awsgi.event', {}).get('requestContext', {}).get(
         'authorizer', {}).get('claims', {}).get('cognito:username')
+    if username:
+        logger.info(f'Found Cognito username cognito:username: {username}')
+        return username
+
+    api_key = request.environ.get('awsgi.event', {}).get('requestContext', {}).get(
+        'identity', {}).get('apiKey')
+    if api_key:
+        logger.info(f'Found apiKey: {api_key}')
+        return api_key
+
+    logger.error('Unable to find identity from Cognito or apiKey')
+    return None
 
 
 def generate_random_jobs(player_cities, current_city_id, count=30):
+    logging.info(f'Generating {count} random job for city_id: {current_city_id}')
     player_city_ids = [city_id for city_id in player_cities.keys()
                        if city_id != current_city_id]
 
@@ -54,14 +67,18 @@ def create_player(player_id, balance):
         if 'ConditionalCheckFailedException' in str(e):
             return False, f'Player "{player_id}" already exists'
 
-    return True, f'Player "{player_id}" created'
+    logging.info(f'Player "{player_id}" created with balance: {balance}')
+    return True, f'Player "{player_id}" created with balance: {balance}'
 
 
 def get_player_attributes(player_id, attributes_to_get):
+    logging.info(f'Getting attributes: "{attributes_to_get}" for player: "{player_id}"')
     result = table.get_item(Key={'player_id': player_id},
                             AttributesToGet=attributes_to_get).get('Item')
     if result:
-        return True, {name: result.get(name) for name in attributes_to_get}
+        results = {name: result.get(name) for name in attributes_to_get}
+        logging.info(f'Retrieved attributes: {results}')
+        return True, results
     else:
         return False, 'Player does not exist'
 
@@ -72,6 +89,7 @@ def add_city_to_player(player_id, city_id):
         return False, 'City does not exist'
 
     try:
+        logging.info(f'Trying to add city_id {city_id} to player: {player_id}')
         result = table.update_item(
             Key={'player_id': player_id},
             UpdateExpression=f"ADD balance :city_cost "
@@ -88,7 +106,9 @@ def add_city_to_player(player_id, city_id):
         logger.info(e)
         return False, 'Purchase failed'
 
-    return True, result.get('Attributes', {})
+    attributes = result.get('Attributes', {})
+    logging.info(f'Successfully added city. {attributes}')
+    return True, attributes
 
 
 def add_plane_to_player(player_id, plane_id, current_city_id=None):
@@ -102,6 +122,7 @@ def add_plane_to_player(player_id, plane_id, current_city_id=None):
     purchased_plane_id = generate_random_string()
 
     try:
+        logging.info(f'Trying to add plane_id {plane_id} to player: {player_id}')
         result = table.update_item(
             Key={'player_id': player_id},
             UpdateExpression=f"ADD balance :plane_cost "
@@ -117,11 +138,15 @@ def add_plane_to_player(player_id, plane_id, current_city_id=None):
         logger.info(e)
         return False, 'Purchase failed'
 
-    return True, result.get('Attributes', {})
+    attributes = result.get('Attributes', {})
+    logging.info(f'Successfully added plane. {attributes}')
+    return True, attributes
 
 
 def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
     try:
+        logging.info(f'Trying to load jobs on plane "{plane_id}" for '
+                     f'player {player_id}. Jobs: {list_of_jobs}')
         result = table.update_item(
             Key={'player_id': player_id},
             UpdateExpression=f"SET planes.{plane_id}.loaded_jobs = :new_jobs",
@@ -134,4 +159,6 @@ def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
         logger.info(e)
         return False, 'Failed to load jobs onto plane'
 
-    return True, result.get('Attributes', {})
+    attributes = result.get('Attributes', {})
+    logging.info(f'Successfully loaded jobs. {attributes}')
+    return True, attributes

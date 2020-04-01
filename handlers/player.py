@@ -1,5 +1,6 @@
-import boto3
+import logging
 
+import boto3
 from flask import Blueprint, make_response
 
 from utils import utils
@@ -9,6 +10,7 @@ blueprint = Blueprint('player', __name__)
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table(name=config.dynamodb_players_table)
+logger = logging.getLogger()
 
 
 @blueprint.route('/v1/player', methods=['GET'])
@@ -19,6 +21,7 @@ def get_player():
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
+    logger.info(f'Received GET request from player: "{player_id}" for path: "/v1/player"')
 
     success, result = utils.get_player_attributes(player_id=player_id,
                                                   attributes_to_get=['player_id'])
@@ -36,6 +39,8 @@ def create_player():
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
+    logger.info(f'Received POST request from player: "{player_id}" '
+                f'for path: "/v1/player"')
 
     created, message = utils.create_player(player_id, balance=100000)
     if not created:
