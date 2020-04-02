@@ -87,21 +87,9 @@ def get_player_city_jobs(city_id):
         }, 200)
 
     logging.info('Jobs have expired, generating new jobs')
-    new_jobs = utils.generate_random_jobs(player_cities, city_id)
-    jobs_expire = int(time.time()) + 240
-    logging.info(f'Generated jobs: {new_jobs}')
-
-    table.update_item(
-        Key={'player_id': player_id},
-        UpdateExpression=f"SET cities.{city_id}.jobs = :new_jobs, "
-                         f"cities.{city_id}.jobs_expire = :jobs_expire",
-        ExpressionAttributeValues={
-            ':new_jobs': new_jobs,
-            ':jobs_expire': jobs_expire
-        },
-        ReturnValues="UPDATED_NEW")
+    new_jobs, jobs_expire = utils.update_city_with_new_jobs(player_id, city_id, player_cities)
 
     return make_response({
-        'new_jobs': new_jobs,
+        'jobs': new_jobs,
         'jobs_expire': jobs_expire
     }, 200)

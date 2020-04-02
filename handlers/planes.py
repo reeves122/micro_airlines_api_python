@@ -105,7 +105,7 @@ def update_plane(plane_id):
         if not updated:
             return make_response(result, 400)
 
-        # TODO: Remove jobs from city after loading
+        utils.remove_jobs_from_city(player_id, source_city.get('city_id'), job_ids)
 
     # Handle new city destination
     if body.get('destination_city_id'):

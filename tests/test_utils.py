@@ -193,3 +193,29 @@ class TestUtils(unittest.TestCase):
                                                 attributes_to_get=['planes'])
 
         self.assertEqual(30, len(result['planes'][plane_1_id]['loaded_jobs']))
+
+    @moto.mock_dynamodb2
+    def test_remove_jobs_from_city(self):
+        shared_test_utils.create_table()
+        utils.create_player(player_id='foo', balance=100000)
+        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a2')
+        utils.add_city_to_player(player_id='foo', city_id='a3')
+
+        # Get the new cities added to the player
+        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
+        player_cities = result.get('cities')
+
+        jobs, _ = utils.update_city_with_new_jobs(player_id='foo', city_id='a1',
+                                                  player_cities=player_cities)
+        jobs_ids_to_remove = [
+            jobs.popitem()[0],
+            jobs.popitem()[0],
+            jobs.popitem()[0]
+        ]
+        utils.remove_jobs_from_city(player_id='foo', city_id='a1', list_of_jobs=jobs_ids_to_remove)
+
+        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
+        city_jobs = result.get('cities').get('a1').get('jobs')
+        print(len(city_jobs))

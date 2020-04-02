@@ -158,7 +158,7 @@ class TestPlanes(unittest.TestCase):
         self.http_client.post('/v1/cities', json={'city': 'a1'})
         self.http_client.post('/v1/cities', json={'city': 'a2'})
         self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -174,6 +174,10 @@ class TestPlanes(unittest.TestCase):
         _, plane = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
         self.assertEqual(4, len(plane.get('loaded_jobs')))
 
+        # Check that jobs were removed from city
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.assertEqual(26, len(jobs))
+
     @moto.mock_dynamodb2
     def test_update_plane_jobs_too_many(self):
         shared_test_utils.create_table()
@@ -182,7 +186,7 @@ class TestPlanes(unittest.TestCase):
         self.http_client.post('/v1/cities', json={'city': 'a1'})
         self.http_client.post('/v1/cities', json={'city': 'a2'})
         self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -203,7 +207,7 @@ class TestPlanes(unittest.TestCase):
         self.http_client.post('/v1/cities', json={'city': 'a1'})
         self.http_client.post('/v1/cities', json={'city': 'a2'})
         self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -229,7 +233,7 @@ class TestPlanes(unittest.TestCase):
         self.http_client.post('/v1/cities', json={'city': 'a1'})
         self.http_client.post('/v1/cities', json={'city': 'a2'})
         self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Update city to fake the jobs expiring
@@ -275,7 +279,7 @@ class TestPlanes(unittest.TestCase):
         self.http_client.post('/v1/cities', json={'city': 'a1'})
         self.http_client.post('/v1/cities', json={'city': 'a2'})
         self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of not compatible type

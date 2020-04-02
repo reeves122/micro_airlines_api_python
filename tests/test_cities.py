@@ -124,7 +124,7 @@ class TestCities(unittest.TestCase):
 
         result = self.http_client.get('/v1/cities/a1/jobs')
         self.assertEqual(200, result.status_code)
-        self.assertEqual(30, len(result.get_json()['new_jobs']))
+        self.assertEqual(30, len(result.get_json()['jobs']))
         jobs_expire = result.get_json()['jobs_expire']
         self.assertLess(time.time(), jobs_expire)
 

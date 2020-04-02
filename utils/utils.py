@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+import time
 
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -164,4 +165,45 @@ def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
 
     attributes = result.get('Attributes', {})
     logging.info(f'Successfully loaded jobs. {attributes}')
+    return True, attributes
+
+
+def update_city_with_new_jobs(player_id, city_id, player_cities):
+    new_jobs = generate_random_jobs(player_cities, city_id)
+    jobs_expire = int(time.time()) + 240
+    logging.info(f'Generated jobs: {new_jobs}')
+
+    table.update_item(
+        Key={'player_id': player_id},
+        UpdateExpression=f"SET cities.{city_id}.jobs = :new_jobs, "
+                         f"cities.{city_id}.jobs_expire = :jobs_expire",
+        ExpressionAttributeValues={
+            ':new_jobs': new_jobs,
+            ':jobs_expire': jobs_expire
+        },
+        ReturnValues="UPDATED_NEW")
+
+    return new_jobs, jobs_expire
+
+
+def remove_jobs_from_city(player_id, city_id, list_of_jobs):
+    if not list_of_jobs:
+        return False, 'No jobs to remove'
+    try:
+        logging.info(f'Trying to remove jobs for city "{city_id}" for '
+                     f'player {player_id}. Jobs to remove: {list_of_jobs}')
+
+        update_expressions = [f'cities.{city_id}.jobs.{job},' for job in list_of_jobs]
+
+        result = table.update_item(
+            Key={'player_id': player_id},
+            UpdateExpression=f"REMOVE " + ' '.join(update_expressions),
+            ReturnValues="UPDATED_NEW")
+
+    except ClientError as e:
+        logger.info(e)
+        return False, 'Failed to remove jobs from city'
+
+    attributes = result.get('Attributes', {})
+    logging.info(f'Successfully removed jobs from city. {attributes}')
     return True, attributes
