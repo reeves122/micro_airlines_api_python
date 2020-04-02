@@ -220,3 +220,40 @@ class TestUtils(unittest.TestCase):
         _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
         city_jobs = result.get('cities').get('a1').get('jobs')
         print(len(city_jobs))
+
+    @moto.mock_dynamodb2
+    def test_handle_plane_landed(self):
+        shared_test_utils.create_table()
+        utils.create_player(player_id='foo', balance=100000)
+        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a1')
+        utils.add_city_to_player(player_id='foo', city_id='a2')
+        utils.add_city_to_player(player_id='foo', city_id='a3')
+
+        # Get the new cities and plane added to the player
+        _, result = utils.get_player_attributes(player_id='foo',
+                                                attributes_to_get=['cities', 'planes'])
+
+        plane_1_id, plane_1_values = result.get('planes').popitem()
+        player_cities = result.get('cities')
+
+        # Generate some random jobs
+        jobs = utils.generate_random_jobs(player_cities=player_cities,
+                                          current_city_id='a1', count=8)
+
+        # Add the jobs to the plane
+        success, _ = utils.add_jobs_to_plane_and_set_destination(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs,
+            destination_city_id='a2', eta=1)
+        self.assertTrue(success)
+
+        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        _, plane_1_values = result.get('planes').popitem()
+        print(plane_1_values)
+
+        success, result = utils.handle_plane_landed(player_id='foo', plane_id=plane_1_id,
+                                                    plane=plane_1_values)
+        self.assertTrue(success)
+        self.assertLess(69800, int(result.get('balance')))
+
+

@@ -62,9 +62,6 @@ def update_plane(plane_id):
     logger.info(f'Received PUT request from player: "{player_id}" '
                 f'for path: "/v1/planes/{plane_id}" with body: "{body}"')
 
-    if not any(value for _, value in body.items()):
-        return make_response('No changes specified', 400)
-
     success, result = utils.get_player_attributes(player_id=player_id,
                                                   attributes_to_get=['cities', 'planes'])
     if not success:
@@ -72,8 +69,16 @@ def update_plane(plane_id):
 
     player_cities = result.get('cities', {})
     player_plane = result.get('planes', {}).get(plane_id)
+
     if not player_plane:
         return make_response('Invalid plane_id', 400)
+
+    landed, result = utils.handle_plane_landed(player_id, plane_id, player_plane)
+    if landed:
+        return make_response(result, 200)
+
+    if not any(value for _, value in body.items()):
+        return make_response('No changes specified', 400)
 
     if not body.get('loaded_jobs') and body.get('destination_city_id'):
         return make_response('loaded_jobs and destination_city_id are required', 400)

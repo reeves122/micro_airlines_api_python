@@ -147,7 +147,8 @@ def add_plane_to_player(player_id, plane_id, current_city_id):
     return True, attributes
 
 
-def add_jobs_to_plane_and_set_destination(player_id, plane_id, list_of_jobs, destination_city_id):
+def add_jobs_to_plane_and_set_destination(player_id, plane_id, list_of_jobs,
+                                          destination_city_id, eta=None):
     try:
         logging.info(f'Trying to load jobs on plane "{plane_id}" for '
                      f'player {player_id}. Jobs: {list_of_jobs}. '
@@ -161,7 +162,7 @@ def add_jobs_to_plane_and_set_destination(player_id, plane_id, list_of_jobs, des
             ExpressionAttributeValues={
                 ':new_jobs': list_of_jobs,
                 ':destination_city_id': destination_city_id,
-                ':eta': int(time.time() + 300)
+                ':eta': eta if eta else int(time.time() + 300)
             },
             ReturnValues="UPDATED_NEW")
 
@@ -171,6 +172,45 @@ def add_jobs_to_plane_and_set_destination(player_id, plane_id, list_of_jobs, des
 
     attributes = result.get('Attributes', {})
     logging.info(f'Successfully loaded jobs. {attributes}')
+    return True, attributes
+
+
+def handle_plane_landed(player_id, plane_id, plane):
+    if not plane.get('eta'):
+        return False, 'Plane has not moved'
+    if plane.get('eta') > time.time():
+        return False, 'Plane has not yet landed'
+
+    logging.info('Plane landed. Calculating revenue and clearing completed jobs')
+
+    jobs_to_remove = [job_id for job_id, job in plane.get('loaded_jobs').items()
+                      if job.get('destination_city_id') == plane.get('destination_city_id')]
+
+    if not jobs_to_remove:
+        return False, 'No jobs to remove at city'
+
+    remove_jobs_expression = [f'planes.{plane_id}.loaded_jobs.{job},' for job in jobs_to_remove]
+
+    total_revenue = sum([job.get('revenue') for _, job in plane.get('loaded_jobs').items()
+                         if job.get('destination_city_id') == plane.get('destination_city_id')])
+
+    logging.info(f'Revenue from {len(jobs_to_remove)} completed jobs: ${total_revenue}')
+
+    result = table.update_item(
+        Key={'player_id': player_id},
+        UpdateExpression=f"ADD balance :total_revenue "
+                         f"SET planes.{plane_id}.eta = null, "
+                         f"planes.{plane_id}.destination_city_id = null, "
+                         f"planes.{plane_id}.current_city_id = :current_city_id "
+                         f"REMOVE " + ' '.join(remove_jobs_expression),
+        ExpressionAttributeValues={
+            ':total_revenue': total_revenue,
+            ':current_city_id': plane.get('destination_city_id')
+        },
+        ReturnValues="UPDATED_NEW")
+
+    attributes = result.get('Attributes', {})
+    logging.info(f'Successfully handled plane landing. {attributes}')
     return True, attributes
 
 

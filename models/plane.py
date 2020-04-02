@@ -4,7 +4,7 @@ from models.base_model import BaseModel
 class Plane(BaseModel):
 
     def __init__(self, plane_id, name, cost, speed, weight, capacity_type, capacity,
-                 flight_range, size_class, current_city_id=None, destination_city_id=None):
+                 flight_range, size_class, current_city_id='none', destination_city_id='none'):
         self.plane_id = plane_id
         self.name = name
         self.cost = cost
