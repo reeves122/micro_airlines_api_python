@@ -147,15 +147,21 @@ def add_plane_to_player(player_id, plane_id, current_city_id):
     return True, attributes
 
 
-def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
+def add_jobs_to_plane_and_set_destination(player_id, plane_id, list_of_jobs, destination_city_id):
     try:
         logging.info(f'Trying to load jobs on plane "{plane_id}" for '
-                     f'player {player_id}. Jobs: {list_of_jobs}')
+                     f'player {player_id}. Jobs: {list_of_jobs}. '
+                     f'Destination city: {destination_city_id}')
+
         result = table.update_item(
             Key={'player_id': player_id},
-            UpdateExpression=f"SET planes.{plane_id}.loaded_jobs = :new_jobs",
+            UpdateExpression=f"SET planes.{plane_id}.loaded_jobs = :new_jobs, "
+                             f"planes.{plane_id}.destination_city_id = :destination_city_id, "
+                             f"planes.{plane_id}.eta = :eta",
             ExpressionAttributeValues={
-                ':new_jobs': list_of_jobs
+                ':new_jobs': list_of_jobs,
+                ':destination_city_id': destination_city_id,
+                ':eta': int(time.time() + 300)
             },
             ReturnValues="UPDATED_NEW")
 

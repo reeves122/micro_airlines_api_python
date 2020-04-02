@@ -184,8 +184,8 @@ class TestUtils(unittest.TestCase):
         jobs = utils.generate_random_jobs(player_cities=player_cities, current_city_id='a1')
 
         # Add the jobs to the plane
-        success, _ = utils.add_jobs_to_plane(player_id='foo',
-                                             plane_id=plane_1_id, list_of_jobs=jobs)
+        success, _ = utils.add_jobs_to_plane_and_set_destination(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs, destination_city_id='a2')
         self.assertTrue(success)
 
         # Check the jobs added to the plane
@@ -193,6 +193,7 @@ class TestUtils(unittest.TestCase):
                                                 attributes_to_get=['planes'])
 
         self.assertEqual(30, len(result['planes'][plane_1_id]['loaded_jobs']))
+        self.assertLess(1585848803, int(result['planes'][plane_1_id]['eta']))
 
     @moto.mock_dynamodb2
     def test_remove_jobs_from_city(self):
