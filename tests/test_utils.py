@@ -256,4 +256,8 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(success)
         self.assertLess(69800, int(result.get('balance')))
 
+        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        _, plane_1_values = result.get('planes').popitem()
+        print(plane_1_values)
+
 

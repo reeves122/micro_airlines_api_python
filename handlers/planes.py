@@ -50,10 +50,10 @@ def create_plane():
         return make_response(result, 400)
 
 
-@blueprint.route('/v1/planes/<string:plane_id>', methods=['PUT'])
-def update_plane(plane_id):
+@blueprint.route('/v1/planes/<string:plane_id>/depart', methods=['PUT'])
+def plane_depart(plane_id):
     """
-    Update a plane for a player
+    Handle a plane departing
 
     :return: API Gateway dictionary response
     """
@@ -72,10 +72,6 @@ def update_plane(plane_id):
 
     if not player_plane:
         return make_response('Invalid plane_id', 400)
-
-    landed, result = utils.handle_plane_landed(player_id, plane_id, player_plane)
-    if landed:
-        return make_response(result, 200)
 
     if not any(value for _, value in body.items()):
         return make_response('No changes specified', 400)
@@ -116,3 +112,24 @@ def update_plane(plane_id):
     utils.remove_jobs_from_city(player_id, source_city.get('city_id'), job_ids)
 
     return make_response('', 200)
+
+
+@blueprint.route('/v1/planes/<string:plane_id>/arrive', methods=['PUT'])
+def plane_arrive(plane_id):
+    """
+    Handle a plane arriving
+
+    :return: API Gateway dictionary response
+    """
+    player_id = utils.get_username()
+    success, result = utils.get_player_attributes(player_id=player_id, attributes_to_get=['planes'])
+    if not success:
+        return make_response(result, 400)
+
+    player_plane = result.get('planes', {}).get(plane_id)
+
+    landed, result = utils.handle_plane_landed(player_id, plane_id, player_plane)
+    if landed:
+        return make_response(result, 200)
+
+    return make_response(result, 400)

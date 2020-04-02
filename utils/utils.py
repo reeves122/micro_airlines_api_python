@@ -199,8 +199,8 @@ def handle_plane_landed(player_id, plane_id, plane):
     result = table.update_item(
         Key={'player_id': player_id},
         UpdateExpression=f"ADD balance :total_revenue "
-                         f"SET planes.{plane_id}.eta = null, "
-                         f"planes.{plane_id}.destination_city_id = null, "
+                         f"SET planes.{plane_id}.eta = 0, "
+                         f"planes.{plane_id}.destination_city_id = none, "
                          f"planes.{plane_id}.current_city_id = :current_city_id "
                          f"REMOVE " + ' '.join(remove_jobs_expression),
         ExpressionAttributeValues={
