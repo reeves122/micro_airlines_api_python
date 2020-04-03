@@ -15,8 +15,14 @@ logging.basicConfig(level=logging.INFO)
 class TestPlanes(unittest.TestCase):
 
     def setUp(self):
+        """
+        Initialize test http client and set up the requestContext
+        :return:
+        """
+        # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+
         from micro_airlines_api import app
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
@@ -34,6 +40,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_get(self):
+        """
+        Test getting planes for a player
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
         utils.add_plane_to_player(player_id=self.player_name, plane_id='a1', current_city_id='a1')
@@ -46,6 +55,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_get_not_exist(self):
+        """
+        Test getting planes for a player when player does not exist
+        """
         shared_test_utils.create_table()
         result = self.http_client.get('/v1/planes')
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
@@ -53,6 +65,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_post(self):
+        """
+        Test adding a plane to a player
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=300)
 
@@ -69,6 +84,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_post_multiple(self):
+        """
+        Test adding a plane to a player multiple times
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=600)
 
@@ -90,12 +108,18 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_post_missing_arg(self):
+        """
+        Test adding a plane to a player with missing parameters
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes')
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_planes_post_plane_not_exist(self):
+        """
+        Test adding a plane to a player when plane id is bad
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes', json={'plane': 'foobar123'})
         self.assertEqual('Plane does not exist', result.get_data().decode('utf-8'))
@@ -103,6 +127,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_post_player_not_exist(self):
+        """
+        Test adding a plane to a player when player doesnt exist
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
@@ -110,6 +137,9 @@ class TestPlanes(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_planes_post_plane_cant_afford(self):
+        """
+        Test adding a plane to a player when player cannot afford
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100)
 
@@ -119,39 +149,72 @@ class TestPlanes(unittest.TestCase):
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
+    def test_plane_load_no_body(self):
+        """
+        Test loading a plane with no body
+        """
+        result = self.http_client.put('/v1/planes/abcxyz/load')
+        self.assertEqual(400, result.status_code)
+
+    @moto.mock_dynamodb2
     def test_plane_depart_no_body(self):
+        """
+        Test departing a plane with no body
+        """
         result = self.http_client.put('/v1/planes/abcxyz/depart')
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
-    def test_plane_depart_empty_body(self):
+    def test_plane_load_bad_player(self):
+        """
+        Test loading a plane with a bad player id
+        """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
-
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={})
-        self.assertEqual('No changes specified', result.get_data().decode('utf-8'))
-        self.assertEqual(400, result.status_code)
-
-    @moto.mock_dynamodb2
-    def test_plane_depart_bad_player(self):
-        shared_test_utils.create_table()
-        result = self.http_client.put(f'/v1/planes/12345/depart', json={'jobs': 'foo'})
+        result = self.http_client.put(f'/v1/planes/12345/load', json={'jobs': 'foo'})
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
-    def test_plane_depart_invalid_plane(self):
+    def test_plane_depart_bad_player(self):
+        """
+        Test departing a plane with a bad player id
+        """
+        shared_test_utils.create_table()
+        result = self.http_client.put(f'/v1/planes/12345/depart',
+                                      json={'jobs': 'foo', 'destination_city_id': 'foo'})
+        self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
+        self.assertEqual(400, result.status_code)
+
+    @moto.mock_dynamodb2
+    def test_plane_load_invalid_plane(self):
+        """
+        Test loading a plane with invalid plane
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        result = self.http_client.put(f'/v1/planes/12345/depart', json={'jobs': 'foo'})
+        result = self.http_client.put(f'/v1/planes/12345/load', json={'jobs': 'foo'})
         self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_success(self):
+    def test_plane_depart_invalid_plane(self):
+        """
+        Test departing a plane with invalid plane
+        """
+        shared_test_utils.create_table()
+        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
+        result = self.http_client.put(f'/v1/planes/12345/depart',
+                                      json={'jobs': 'foo', 'destination_city_id': 'foo'})
+        self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
+        self.assertEqual(400, result.status_code)
+
+    @moto.mock_dynamodb2
+    def test_plane_load_jobs_success(self):
+        """
+        Test loading a plane
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -165,7 +228,7 @@ class TestPlanes(unittest.TestCase):
         job_ids = [key for key, values in jobs.items()
                    if values.get('job_type') == 'C'][:4]
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids
         })
         self.assertEqual(200, result.status_code)
@@ -179,7 +242,10 @@ class TestPlanes(unittest.TestCase):
         self.assertEqual(26, len(jobs))
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_too_many(self):
+    def test_plane_load_jobs_too_many(self):
+        """
+        Test loading a plane with too many jobs
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -193,14 +259,17 @@ class TestPlanes(unittest.TestCase):
         job_ids = [key for key, values in jobs.items()
                    if values.get('job_type') == 'C'][:5]
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids
         })
         self.assertEqual(400, result.status_code)
         self.assertEqual('Not enough capacity', result.get_data().decode('utf-8'))
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_too_many_already_loaded(self):
+    def test_plane_load_jobs_too_many_already_loaded(self):
+        """
+        Test loading a plane with too many already loaded
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -214,19 +283,22 @@ class TestPlanes(unittest.TestCase):
         job_ids = [key for key, values in jobs.items()
                    if values.get('job_type') == 'C'][:8]
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids[:4]
         })
         self.assertEqual(200, result.status_code)
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids[5:]
         })
         self.assertEqual(400, result.status_code)
         self.assertEqual('Not enough capacity', result.get_data().decode('utf-8'))
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_expired(self):
+    def test_plane_load_jobs_expired(self):
+        """
+        Test loading a plane with an expired job
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -248,14 +320,17 @@ class TestPlanes(unittest.TestCase):
         job_ids = [key for key, values in jobs.items()
                    if values.get('job_type') == 'C'][:4]
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids
         })
         self.assertEqual(400, result.status_code)
         self.assertEqual('Jobs have expired', result.get_data().decode('utf-8'))
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_wrong_job_id(self):
+    def test_plane_load_jobs_wrong_job_id(self):
+        """
+        Test loading a plane with a bad job id
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -265,14 +340,17 @@ class TestPlanes(unittest.TestCase):
         self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': ['foo']
         })
         self.assertEqual(400, result.status_code)
         self.assertEqual('One or more job ids is invalid', result.get_data().decode('utf-8'))
 
     @moto.mock_dynamodb2
-    def test_plane_depart_jobs_wrong_job_type(self):
+    def test_plane_load_jobs_wrong_job_type(self):
+        """
+        Test loading a plane with wrong type of job
+        """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
@@ -286,7 +364,7 @@ class TestPlanes(unittest.TestCase):
         job_ids = [key for key, values in jobs.items()
                    if values.get('job_type') == 'P'][:5]
 
-        result = self.http_client.put(f'/v1/planes/{plane_id}/depart', json={
+        result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
             'loaded_jobs': job_ids
         })
         self.assertEqual(400, result.status_code)

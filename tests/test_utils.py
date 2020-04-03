@@ -16,12 +16,21 @@ logging.basicConfig(level=logging.INFO)
 class TestUtils(unittest.TestCase):
 
     def setUp(self):
+        """
+        Initialize test http client and set up the requestContext
+        :return:
+        """
+        # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+
         self.player_name = 'test_player_1'
         self.http_client = Flask(__name__)
 
     def test_get_username_cognito(self):
+        """
+        Test getting username from cognito
+        """
         with self.http_client.test_request_context():
             request.environ['awsgi.event'] = {
                 'requestContext': {
@@ -35,6 +44,9 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(self.player_name, utils.get_username())
 
     def test_get_username_apikey(self):
+        """
+        Test getting username from apiKey
+        """
         with self.http_client.test_request_context():
             request.environ['awsgi.event'] = {
                 'requestContext': {
@@ -46,6 +58,9 @@ class TestUtils(unittest.TestCase):
             self.assertEqual('abc123', utils.get_username())
 
     def test_generate_random_jobs(self):
+        """
+        Test generating random jobs
+        """
         player_cities = {
             '0': cities['a0'],
             '1': cities['a1'],
@@ -62,11 +77,17 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(5 < len(c_jobs) > 5)
 
     def test_generate_random_string(self):
+        """
+        Test generating a random string
+        """
         result = utils.generate_random_string()
         self.assertEqual(20, len(result))
 
     @moto.mock_dynamodb2
     def test_create_player(self):
+        """
+        Test creating a player
+        """
         shared_test_utils.create_table()
         created, message = utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
@@ -74,6 +95,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_create_player_already_exists(self):
+        """
+        Test creating a player that already exists
+        """
         shared_test_utils.create_table()
         created, message = utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
@@ -85,6 +109,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_get_player_attributes(self):
+        """
+        Test getting player attributes
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=10000)
 
@@ -95,6 +122,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_get_player_attributes_not_exist(self):
+        """
+        Test getting player attributes when player does not exist
+        """
         shared_test_utils.create_table()
         success, result = utils.get_player_attributes(player_id='foo',
                                                       attributes_to_get=['player_id'])
@@ -103,6 +133,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_city_to_player(self):
+        """
+        Test adding a city to a player
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=10000)
         success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
@@ -111,6 +144,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_city_to_player_not_exist(self):
+        """
+        Test adding a city to a player when city does not exist
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=10000)
         success, result = utils.add_city_to_player(player_id='foo', city_id='foo123')
@@ -119,6 +155,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_city_to_player_cant_afford(self):
+        """
+        Test adding a city to a player when player cannot afford city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=9000)
         success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
@@ -127,6 +166,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_city_to_player_already_owned(self):
+        """
+        Test adding a city to a player when player already owns city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=20000)
         success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
@@ -139,6 +181,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_plane_to_player(self):
+        """
+        Test adding a plane to a player
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=200)
         success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
@@ -148,6 +193,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_plane_to_player_not_exist(self):
+        """
+        Test adding a plane to a player that does not exist
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=10000)
         success, result = utils.add_plane_to_player(player_id='foo', plane_id='foo123',
@@ -157,6 +205,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_plane_to_player_cant_afford(self):
+        """
+        Test adding a plane to a player when player cannot afford
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=199)
         success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
@@ -166,6 +217,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_add_jobs_to_plane(self):
+        """
+        Test adding a jobs to a plane
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=100000)
         utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
@@ -184,8 +238,8 @@ class TestUtils(unittest.TestCase):
         jobs = utils.generate_random_jobs(player_cities=player_cities, current_city_id='a1')
 
         # Add the jobs to the plane
-        success, _ = utils.add_jobs_to_plane_and_set_destination(
-            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs, destination_city_id='a2')
+        success, _ = utils.add_jobs_to_plane(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
         self.assertTrue(success)
 
         # Check the jobs added to the plane
@@ -193,10 +247,12 @@ class TestUtils(unittest.TestCase):
                                                 attributes_to_get=['planes'])
 
         self.assertEqual(30, len(result['planes'][plane_1_id]['loaded_jobs']))
-        self.assertLess(1585848803, int(result['planes'][plane_1_id]['eta']))
 
     @moto.mock_dynamodb2
     def test_remove_jobs_from_city(self):
+        """
+        Test removing jobs from a city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=100000)
         utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
@@ -223,6 +279,9 @@ class TestUtils(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_handle_plane_landed(self):
+        """
+        Test unloading a plane once it has landed
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id='foo', balance=100000)
         utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
@@ -242,10 +301,11 @@ class TestUtils(unittest.TestCase):
                                           current_city_id='a1', count=8)
 
         # Add the jobs to the plane
-        success, _ = utils.add_jobs_to_plane_and_set_destination(
-            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs,
-            destination_city_id='a2', eta=1)
+        success, _ = utils.add_jobs_to_plane(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
         self.assertTrue(success)
+
+        utils.depart_plane(player_id='foo', plane_id=plane_1_id, destination_city_id='a2', eta=1)
 
         _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
         _, plane_1_values = result.get('planes').popitem()
@@ -258,6 +318,7 @@ class TestUtils(unittest.TestCase):
 
         _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
         _, plane_1_values = result.get('planes').popitem()
-        print(plane_1_values)
-
-
+        self.assertEqual(0, plane_1_values['eta'])
+        self.assertEqual('none', plane_1_values['destination_city_id'])
+        self.assertEqual('a2', plane_1_values['current_city_id'])
+        self.assertGreater(8, len(plane_1_values['loaded_jobs']))

@@ -50,17 +50,17 @@ def create_plane():
         return make_response(result, 400)
 
 
-@blueprint.route('/v1/planes/<string:plane_id>/depart', methods=['PUT'])
-def plane_depart(plane_id):
+@blueprint.route('/v1/planes/<string:plane_id>/load', methods=['PUT'])
+def plane_load(plane_id):
     """
-    Handle a plane departing
+    Handle a plane loading
 
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
     body = request.get_json(force=True)
     logger.info(f'Received PUT request from player: "{player_id}" '
-                f'for path: "/v1/planes/{plane_id}" with body: "{body}"')
+                f'for path: "/v1/planes/{plane_id}/load" with body: "{body}"')
 
     success, result = utils.get_player_attributes(player_id=player_id,
                                                   attributes_to_get=['cities', 'planes'])
@@ -73,11 +73,11 @@ def plane_depart(plane_id):
     if not player_plane:
         return make_response('Invalid plane_id', 400)
 
-    if not any(value for _, value in body.items()):
-        return make_response('No changes specified', 400)
+    if player_plane.get('eta', 0) > 0:
+        return make_response('Plane is currently in flight', 400)
 
-    if not body.get('loaded_jobs') and body.get('destination_city_id'):
-        return make_response('loaded_jobs and destination_city_id are required', 400)
+    if not body.get('loaded_jobs'):
+        return make_response('loaded_jobs is a required field', 400)
 
     # Handle new jobs
     job_ids = body.get('loaded_jobs')
@@ -104,17 +104,51 @@ def plane_depart(plane_id):
     # Combine new jobs with existing loaded jobs
     jobs = {**player_plane.get('loaded_jobs'), **jobs}
 
-    updated, result = utils.add_jobs_to_plane_and_set_destination(player_id, plane_id, jobs,
-                                                                  body.get('destination_city_id'))
+    updated, result = utils.add_jobs_to_plane(player_id, plane_id, jobs)
     if not updated:
         return make_response(result, 400)
 
     utils.remove_jobs_from_city(player_id, source_city.get('city_id'), job_ids)
 
-    return make_response('', 200)
+    return make_response('Loaded plane successfully', 200)
 
 
-@blueprint.route('/v1/planes/<string:plane_id>/arrive', methods=['PUT'])
+@blueprint.route('/v1/planes/<string:plane_id>/depart', methods=['PUT'])
+def plane_depart(plane_id):
+    """
+    Handle a plane departing
+
+    :return: API Gateway dictionary response
+    """
+    player_id = utils.get_username()
+    body = request.get_json(force=True)
+    logger.info(f'Received PUT request from player: "{player_id}" '
+                f'for path: "/v1/planes/{plane_id}/depart" with body: "{body}"')
+
+    if not body.get('destination_city_id'):
+        return make_response('destination_city_id is a required field', 400)
+
+    success, result = utils.get_player_attributes(player_id=player_id,
+                                                  attributes_to_get=['cities', 'planes'])
+    if not success:
+        return make_response(result, 400)
+
+    player_plane = result.get('planes', {}).get(plane_id)
+
+    if not player_plane:
+        return make_response('Invalid plane_id', 400)
+
+    if player_plane.get('eta', 0) > 0:
+        return make_response('Plane is currently in flight', 400)
+
+    success, result = utils.depart_plane(player_id, plane_id, body.get('destination_city_id'))
+    if not success:
+        return make_response(result, 400)
+
+    return make_response(result, 200)
+
+
+@blueprint.route('/v1/planes/<string:plane_id>/unload', methods=['PUT'])
 def plane_arrive(plane_id):
     """
     Handle a plane arriving
@@ -122,6 +156,8 @@ def plane_arrive(plane_id):
     :return: API Gateway dictionary response
     """
     player_id = utils.get_username()
+    logger.info(f'Received PUT request from player: "{player_id}" '
+                f'for path: "/v1/planes/{plane_id}/unload"')
     success, result = utils.get_player_attributes(player_id=player_id, attributes_to_get=['planes'])
     if not success:
         return make_response(result, 400)

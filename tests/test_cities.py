@@ -15,8 +15,14 @@ logging.basicConfig(level=logging.INFO)
 class TestCities(unittest.TestCase):
 
     def setUp(self):
+        """
+        Initialize test http client and set up the requestContext
+        :return:
+        """
+        # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+
         from micro_airlines_api import app
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
@@ -34,6 +40,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_get(self):
+        """
+        Test getting cities
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
         utils.add_city_to_player(player_id=self.player_name, city_id='a1')
@@ -48,6 +57,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_get_player_not_exist(self):
+        """
+        Test getting cities when player does not exist
+        """
         shared_test_utils.create_table()
         result = self.http_client.get('/v1/cities')
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
@@ -55,6 +67,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_post(self):
+        """
+        Test creating a city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=11000)
 
@@ -71,12 +86,18 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_post_missing_body(self):
+        """
+        Test creating a city when body is missing
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/cities')
         self.assertEqual(400, result.status_code)
 
     @moto.mock_dynamodb2
     def test_cities_post_city_not_exist(self):
+        """
+        Test creating a city when city id does not exist
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/cities?city', json={'city': 'foobar123'})
         self.assertEqual('City does not exist', result.get_data().decode('utf-8'))
@@ -84,6 +105,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_post_player_not_exist(self):
+        """
+        Test creating a city when player does not exist
+        """
         shared_test_utils.create_table()
         result = self.http_client.post('/v1/cities', json={'city': 'a0'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
@@ -91,6 +115,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_post_city_cant_afford(self):
+        """
+        Test creating a city when player cant afford it
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=1000)
 
@@ -101,6 +128,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_cities_post_city_already_owned(self):
+        """
+        Test creating a city when player already owns it
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
 
@@ -115,6 +145,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_get_player_city_jobs(self):
+        """
+        Test getting jobs for a city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
         utils.add_city_to_player(player_id=self.player_name, city_id='a1')
@@ -134,6 +167,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_get_player_city_jobs_not_owned(self):
+        """
+        Test getting jobs for a city when the city is not owned
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
         utils.add_city_to_player(player_id=self.player_name, city_id='a1')
@@ -145,6 +181,9 @@ class TestCities(unittest.TestCase):
 
     @moto.mock_dynamodb2
     def test_get_player_city_jobs_not_enough(self):
+        """
+        Test getting jobs for a city when player only has one city
+        """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
         utils.add_city_to_player(player_id=self.player_name, city_id='a1')

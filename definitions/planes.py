@@ -1,5 +1,7 @@
 from models.plane import Plane
 
+# TODO: Update to usable plane definitions
+
 planes = {
     'a0': Plane(plane_id='a0',
                 name='Plane 1',

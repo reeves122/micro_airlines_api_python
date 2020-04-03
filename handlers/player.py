@@ -24,7 +24,7 @@ def get_player():
     logger.info(f'Received GET request from player: "{player_id}" for path: "/v1/player"')
 
     success, result = utils.get_player_attributes(player_id=player_id,
-                                                  attributes_to_get=['player_id'])
+                                                  attributes_to_get=['player_id', 'balance'])
     if success:
         return make_response(result, 200)
     else:

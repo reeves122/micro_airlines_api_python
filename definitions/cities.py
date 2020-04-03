@@ -1,5 +1,7 @@
 from models.city import City
 
+# TODO: Update to real city definitions
+
 cities = {
     'a0': City(city_id='a0',
                name='Chicago',
