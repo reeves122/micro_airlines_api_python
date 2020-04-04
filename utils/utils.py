@@ -7,6 +7,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 from flask import request
+from haversine import haversine, Unit
 
 from config import config
 from models.job import Job
@@ -75,6 +76,34 @@ def generate_random_string(length=20):
     :param length:      Length of string to generate
     """
     return ''.join(random.choices(string.ascii_lowercase, k=length))
+
+
+def get_distance_between_cities(city_id_1, city_id_2):
+    """
+    Use Haversine to get the distance between two cities
+
+    :param city_id_1:
+    :param city_id_2:
+    :return:
+    """
+    city_1 = cities.get(city_id_1)
+    city_2 = cities.get(city_id_2)
+    if not city_1 or not city_2:
+        return None
+
+    return int(haversine((city_1.latitude, city_1.longitude),
+                         (city_2.latitude, city_2.longitude), unit=Unit.MILES))
+
+
+def get_seconds_between_cities(distance_in_miles, plane_speed_mph):
+    """
+    Get the number of seconds travel time given a distance in miles and a planes speed
+
+    :param distance_in_miles:       Travel distance in miles
+    :param plane_speed_mph:         Plane speed in MPH
+    :return:                        Whole number of seconds to travel
+    """
+    return int((distance_in_miles / plane_speed_mph) * 60 * 60)
 
 
 def create_player(player_id, balance):
@@ -225,19 +254,23 @@ def add_jobs_to_plane(player_id, plane_id, list_of_jobs):
     return True, attributes
 
 
-def depart_plane(player_id, plane_id, destination_city_id, eta=None):
+def depart_plane(player_id, plane_id, plane, destination_city_id, eta=None):
     """
     Depart plane from its current location to the destination city
 
     :param player_id:                   Player ID to update
-    :param plane_id:                    Plane ID to depart
+    :param plane:                       Plane object to depart
+    :param plane_id:                    ID of the plane
     :param destination_city_id:         ID of destination city
     :param eta:                         (optional) override ETA
     :return:                            True/False if successful or not, Message or result data
     """
     try:
-        logging.info(f'Trying to depart plane "{plane_id}" for '
+        logging.info(f'Trying to depart plane "{plane}" for '
                      f'player {player_id}. Destination city: {destination_city_id}')
+
+        distance = get_distance_between_cities(plane.get('current_city_id'), destination_city_id)
+        calculated_eta = get_seconds_between_cities(distance, plane.get('speed'))
 
         result = table.update_item(
             Key={'player_id': player_id},
@@ -245,7 +278,7 @@ def depart_plane(player_id, plane_id, destination_city_id, eta=None):
                              f"planes.{plane_id}.eta = :eta",
             ExpressionAttributeValues={
                 ':destination_city_id': destination_city_id,
-                ':eta': eta if eta else int(time.time() + 300)
+                ':eta': eta if eta else calculated_eta
             },
             ReturnValues="UPDATED_NEW")
 

@@ -217,6 +217,24 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
 
+    def test_get_distance_between_cities(self):
+        """
+        Test getting the distance between two cities
+        """
+        result = self.utils.get_distance_between_cities('c1036', 'c1005')
+        self.assertEqual(190, result)
+        result = self.utils.get_distance_between_cities('c3010', 'c5003')
+        self.assertEqual(4442, result)
+
+    def test_get_seconds_between_cities(self):
+        """
+        Test getting the number of seconds to travel between cities
+        """
+        result = self.utils.get_seconds_between_cities(distance_in_miles=60, plane_speed_mph=60)
+        self.assertEqual(3600, result)
+        result = self.utils.get_seconds_between_cities(distance_in_miles=40, plane_speed_mph=300)
+        self.assertEqual(480, result)
+
     @moto.mock_dynamodb2
     def test_add_jobs_to_plane(self):
         """
@@ -307,7 +325,7 @@ class TestUtils(unittest.TestCase):
             player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
         self.assertTrue(success)
 
-        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id,
+        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id, plane=plane_1_values,
                                 destination_city_id='c1002', eta=1)
 
         # Get the updated plane
@@ -327,3 +345,41 @@ class TestUtils(unittest.TestCase):
         self.assertEqual('none', plane_1_values['destination_city_id'])
         self.assertEqual('c1002', plane_1_values['current_city_id'])
         self.assertGreater(8, len(plane_1_values['loaded_jobs']))
+
+    @moto.mock_dynamodb2
+    def test_depart_plane(self):
+        """
+        Test departing a plane
+        """
+        shared_test_utils.create_table()
+        self.utils.create_player(player_id='foo', balance=100000)
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1002')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1003')
+
+        # Get the new cities and plane added to the player
+        _, result = self.utils.get_player_attributes(player_id='foo',
+                                                     attributes_to_get=['cities', 'planes'])
+
+        plane_1_id, plane_1_values = result.get('planes').popitem()
+        player_cities = result.get('cities')
+
+        # Generate some random jobs
+        jobs = self.utils.generate_random_jobs(player_cities=player_cities,
+                                               current_city_id='c1001', count=8)
+
+        # Add the jobs to the plane
+        success, _ = self.utils.add_jobs_to_plane(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
+        self.assertTrue(success)
+
+        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id, plane=plane_1_values,
+                                destination_city_id='c1002')
+
+        # Get the updated plane
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        _, plane_1_values = result.get('planes').popitem()
+        self.assertEqual(74225, plane_1_values.get('eta'))
+        self.assertEqual('c1002', plane_1_values.get('destination_city_id'))
+        self.assertEqual(8, len(plane_1_values.get('loaded_jobs')))

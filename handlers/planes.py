@@ -141,7 +141,8 @@ def plane_depart(plane_id):
     if player_plane.get('eta', 0) > 0:
         return make_response('Plane is currently in flight', 400)
 
-    success, result = utils.depart_plane(player_id, plane_id, body.get('destination_city_id'))
+    success, result = utils.depart_plane(player_id, plane_id, player_plane,
+                                         body.get('destination_city_id'))
     if not success:
         return make_response(result, 400)
 
