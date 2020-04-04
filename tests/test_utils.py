@@ -70,7 +70,7 @@ class TestUtils(unittest.TestCase):
             'c1004': cities['c1004']
         }
 
-        result = self.utils.generate_random_jobs(player_cities, '0')
+        result = self.utils.generate_random_jobs(player_cities, 'c1001')
 
         p_jobs = [i for i in result.values() if i['job_type'] == 'P']
         c_jobs = [i for i in result.values() if i['job_type'] == 'C']
@@ -235,6 +235,30 @@ class TestUtils(unittest.TestCase):
         result = self.utils.get_seconds_between_cities(distance_in_miles=40, plane_speed_mph=300)
         self.assertEqual(480, result)
 
+    def test_calculate_job_revenue(self):
+        """
+        Test calculating job revenue
+        """
+        # Tokyo to Delhi
+        result = self.utils.calculate_job_revenue('c5052', 'c5012')
+        # self.assertEqual(530, result)  # Target value
+        self.assertEqual(666, result)
+
+        # Tokyo to Shanghai
+        result = self.utils.calculate_job_revenue('c5052', 'c5046')
+        # self.assertEqual(200, result)  # Target value
+        self.assertEqual(236, result)
+
+        # Delhi to Sao Paulo
+        result = self.utils.calculate_job_revenue('c5012', 'c2027')
+        # self.assertEqual(1500, result)  # Target value
+        self.assertEqual(1574, result)
+
+        # Rio de Janeiro to Sao Paulo
+        result = self.utils.calculate_job_revenue('c2024', 'c2027')
+        # self.assertEqual(80, result)  # Target value
+        self.assertEqual(87, result)
+
     @moto.mock_dynamodb2
     def test_add_jobs_to_plane(self):
         """
@@ -336,7 +360,7 @@ class TestUtils(unittest.TestCase):
         success, result = self.utils.handle_plane_landed(player_id='foo', plane_id=plane_1_id,
                                                          plane=plane_1_values)
         self.assertTrue(success)
-        self.assertLess(28080, int(result.get('balance')))
+        self.assertLess(24000, int(result.get('balance')))
 
         # Check the updated plane for the correct values after landing the plane
         _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])

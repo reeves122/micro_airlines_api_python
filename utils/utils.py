@@ -62,11 +62,23 @@ def generate_random_jobs(player_cities, current_city_id, count=30):
 
         job = Job(origin_city_id=current_city_id,
                   destination_city_id=random.choice(player_city_ids),
-                  revenue=1000,
+                  revenue=calculate_job_revenue(current_city_id, random.choice(player_city_ids)),
                   job_type=random.choice(['P', 'C']))
         jobs[job.id] = job.serialize()
 
     return jobs
+
+
+def calculate_job_revenue(origin_city_id, destination_city_id):
+    """
+    Calculate job revenue between two cities based on distance
+
+    :param origin_city_id:              Starting City ID
+    :param destination_city_id:         Destination City ID
+    :return:                            Calculated job revenue
+    """
+    distance = get_distance_between_cities(origin_city_id, destination_city_id)
+    return int(50 + distance * 0.17)
 
 
 def generate_random_string(length=20):
