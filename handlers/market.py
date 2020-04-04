@@ -23,7 +23,9 @@ def get_available_cities():
     """
     logger.info(f'Received GET request for path: "/v1/market/cities"')
     cities_serialized = [city.serialize() for city_id, city in cities.items()]
-    return make_response({'cities': cities_serialized}, 200)
+    response = make_response({'cities': cities_serialized}, 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @blueprint.route('/v1/market/planes', methods=['GET'])
