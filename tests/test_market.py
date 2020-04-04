@@ -39,8 +39,8 @@ class TestMarket(unittest.TestCase):
         Test getting cities
         """
         result = self.http_client.get('/v1/market/cities')
-        self.assertEqual(2, len(result.get_json()['cities']))
-        self.assertEqual(10000, result.get_json()['cities'][0]['cost'])
+        self.assertEqual(251, len(result.get_json()['cities']))
+        self.assertEqual(2778, result.get_json()['cities'][0]['cost'])
         self.assertEqual(200, result.status_code)
 
     @moto.mock_dynamodb2

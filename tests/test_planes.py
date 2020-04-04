@@ -7,7 +7,6 @@ import moto
 
 from definitions.planes import planes
 from tests import shared_test_utils
-from utils import utils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,8 +21,9 @@ class TestPlanes(unittest.TestCase):
         # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
-
+        from utils import utils
         from micro_airlines_api import app
+        self.utils = utils
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
         self.player_name = 'test_player_1'
@@ -43,9 +43,11 @@ class TestPlanes(unittest.TestCase):
         """
         Test getting planes for a player
         """
+
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_plane_to_player(player_id=self.player_name, plane_id='a1', current_city_id='a1')
+        self.utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.add_plane_to_player(player_id=self.player_name, plane_id='a1',
+                                       current_city_id='c1001')
         result = self.http_client.get('/v1/planes')
 
         _, first_plane = result.get_json()['planes'].popitem()
@@ -69,16 +71,16 @@ class TestPlanes(unittest.TestCase):
         Test adding a plane to a player
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=300)
+        self.utils.create_player(player_id=self.player_name, balance=300)
 
-        result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.assertEqual({
             'balance': 100
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
         # Query the table to validate the result
-        _, result = utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
+        _, result = self.utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
         _, first_plane = result['planes'].popitem()
         self.assertEqual(planes['a1'].serialize(), first_plane)
 
@@ -88,22 +90,22 @@ class TestPlanes(unittest.TestCase):
         Test adding a plane to a player multiple times
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=600)
+        self.utils.create_player(player_id=self.player_name, balance=600)
 
-        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'c1001'})
         self.assertEqual({
             'balance': 400
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
-        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'c1001'})
         self.assertEqual({
             'balance': 200
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
         # Query the table to validate the result
-        _, result = utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
+        _, result = self.utils.get_player_attributes(self.player_name, attributes_to_get=['planes'])
         self.assertEqual(2, len(result['planes'].keys()))
 
     @moto.mock_dynamodb2
@@ -131,7 +133,7 @@ class TestPlanes(unittest.TestCase):
         Test adding a plane to a player when player doesnt exist
         """
         shared_test_utils.create_table()
-        result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -141,10 +143,10 @@ class TestPlanes(unittest.TestCase):
         Test adding a plane to a player when player cannot afford
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100)
+        self.utils.create_player(player_id=self.player_name, balance=100)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'a1'})
+        result = self.http_client.post('/v1/planes', json={'plane': 'a0', 'city': 'c1001'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -192,7 +194,7 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         result = self.http_client.put(f'/v1/planes/12345/load', json={'jobs': 'foo'})
         self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
@@ -204,7 +206,7 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         result = self.http_client.put(f'/v1/planes/12345/depart',
                                       json={'jobs': 'foo', 'destination_city_id': 'foo'})
         self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
@@ -217,11 +219,11 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        jobs = self.http_client.get('/v1/cities/c1001/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -238,7 +240,7 @@ class TestPlanes(unittest.TestCase):
         self.assertEqual(4, len(plane.get('loaded_jobs')))
 
         # Check that jobs were removed from city
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        jobs = self.http_client.get('/v1/cities/c1001/jobs').get_json().get('jobs')
         self.assertEqual(26, len(jobs))
 
     @moto.mock_dynamodb2
@@ -248,11 +250,11 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        self.http_client.post('/v1/cities', json={'city': 'c1004'})
+        jobs = self.http_client.get('/v1/cities/c1002/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -272,11 +274,11 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        jobs = self.http_client.get('/v1/cities/c1001/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of compatible type
@@ -301,17 +303,17 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        jobs = self.http_client.get('/v1/cities/c1001/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Update city to fake the jobs expiring
-        utils.table.update_item(
+        self.utils.table.update_item(
             Key={'player_id': self.player_name},
-            UpdateExpression="SET cities.a1.jobs_expire = :jobs_expire",
+            UpdateExpression="SET cities.c1001.jobs_expire = :jobs_expire",
             ExpressionAttributeValues={
                 ':jobs_expire': int(time.time() - 60)
             })
@@ -333,11 +335,11 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        self.http_client.get('/v1/cities/a1/jobs').get_json().get('new_jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1001'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        self.http_client.get('/v1/cities/c1001/jobs').get_json().get('new_jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         result = self.http_client.put(f'/v1/planes/{plane_id}/load', json={
@@ -353,11 +355,11 @@ class TestPlanes(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.http_client.post(f'/v1/player')
-        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a1'})
-        self.http_client.post('/v1/cities', json={'city': 'a2'})
-        self.http_client.post('/v1/cities', json={'city': 'a3'})
-        jobs = self.http_client.get('/v1/cities/a1/jobs').get_json().get('jobs')
+        self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1002'})
+        self.http_client.post('/v1/cities', json={'city': 'c1003'})
+        self.http_client.post('/v1/cities', json={'city': 'c1004'})
+        jobs = self.http_client.get('/v1/cities/c1002/jobs').get_json().get('jobs')
         plane_id, _ = self.http_client.get('/v1/planes').get_json().get('planes').popitem()
 
         # Pick some jobs of not compatible type

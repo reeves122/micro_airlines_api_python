@@ -7,7 +7,6 @@ from flask import Flask
 import moto
 
 from definitions.cities import cities
-from utils import utils
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +22,9 @@ class TestUtils(unittest.TestCase):
         # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+
+        from utils import utils
+        self.utils = utils
 
         self.player_name = 'test_player_1'
         self.http_client = Flask(__name__)
@@ -41,7 +43,7 @@ class TestUtils(unittest.TestCase):
                     }
                 }
             }
-            self.assertEqual(self.player_name, utils.get_username())
+            self.assertEqual(self.player_name, self.utils.get_username())
 
     def test_get_username_apikey(self):
         """
@@ -55,20 +57,20 @@ class TestUtils(unittest.TestCase):
                     }
                 }
             }
-            self.assertEqual('abc123', utils.get_username())
+            self.assertEqual('abc123', self.utils.get_username())
 
     def test_generate_random_jobs(self):
         """
         Test generating random jobs
         """
         player_cities = {
-            '0': cities['a0'],
-            '1': cities['a1'],
-            '2': cities['a2'],
-            '3': cities['a3']
+            'c1001': cities['c1001'],
+            'c1002': cities['c1002'],
+            'c1003': cities['c1003'],
+            'c1004': cities['c1004']
         }
 
-        result = utils.generate_random_jobs(player_cities, '0')
+        result = self.utils.generate_random_jobs(player_cities, '0')
 
         p_jobs = [i for i in result.values() if i['job_type'] == 'P']
         c_jobs = [i for i in result.values() if i['job_type'] == 'C']
@@ -80,7 +82,7 @@ class TestUtils(unittest.TestCase):
         """
         Test generating a random string
         """
-        result = utils.generate_random_string()
+        result = self.utils.generate_random_string()
         self.assertEqual(20, len(result))
 
     @moto.mock_dynamodb2
@@ -89,7 +91,7 @@ class TestUtils(unittest.TestCase):
         Test creating a player
         """
         shared_test_utils.create_table()
-        created, message = utils.create_player(player_id='foo', balance=10000)
+        created, message = self.utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
         self.assertEqual('Player "foo" created with balance: 10000', message)
 
@@ -99,11 +101,11 @@ class TestUtils(unittest.TestCase):
         Test creating a player that already exists
         """
         shared_test_utils.create_table()
-        created, message = utils.create_player(player_id='foo', balance=10000)
+        created, message = self.utils.create_player(player_id='foo', balance=10000)
         self.assertTrue(created)
         self.assertEqual('Player "foo" created with balance: 10000', message)
 
-        created, message = utils.create_player(player_id='foo', balance=10000)
+        created, message = self.utils.create_player(player_id='foo', balance=10000)
         self.assertFalse(created)
         self.assertEqual('Player "foo" already exists', message)
 
@@ -113,10 +115,10 @@ class TestUtils(unittest.TestCase):
         Test getting player attributes
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=10000)
+        self.utils.create_player(player_id='foo', balance=10000)
 
-        success, result = utils.get_player_attributes(player_id='foo',
-                                                      attributes_to_get=['player_id'])
+        success, result = self.utils.get_player_attributes(player_id='foo',
+                                                           attributes_to_get=['player_id'])
         self.assertTrue(success)
         self.assertEqual('foo', result['player_id'])
 
@@ -126,8 +128,8 @@ class TestUtils(unittest.TestCase):
         Test getting player attributes when player does not exist
         """
         shared_test_utils.create_table()
-        success, result = utils.get_player_attributes(player_id='foo',
-                                                      attributes_to_get=['player_id'])
+        success, result = self.utils.get_player_attributes(player_id='foo',
+                                                           attributes_to_get=['player_id'])
         self.assertFalse(success)
         self.assertEqual('Player does not exist', result)
 
@@ -137,10 +139,10 @@ class TestUtils(unittest.TestCase):
         Test adding a city to a player
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=10000)
-        success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
+        self.utils.create_player(player_id='foo', balance=10000)
+        success, result = self.utils.add_city_to_player(player_id='foo', city_id='c1001')
         self.assertTrue(success)
-        self.assertEqual(0, result.get('balance'))
+        self.assertEqual(7222, result.get('balance'))
 
     @moto.mock_dynamodb2
     def test_add_city_to_player_not_exist(self):
@@ -148,8 +150,8 @@ class TestUtils(unittest.TestCase):
         Test adding a city to a player when city does not exist
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=10000)
-        success, result = utils.add_city_to_player(player_id='foo', city_id='foo123')
+        self.utils.create_player(player_id='foo', balance=10000)
+        success, result = self.utils.add_city_to_player(player_id='foo', city_id='foo123')
         self.assertFalse(success)
         self.assertEqual('City does not exist', result)
 
@@ -159,8 +161,8 @@ class TestUtils(unittest.TestCase):
         Test adding a city to a player when player cannot afford city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=9000)
-        success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
+        self.utils.create_player(player_id='foo', balance=1000)
+        success, result = self.utils.add_city_to_player(player_id='foo', city_id='c1001')
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
 
@@ -170,12 +172,12 @@ class TestUtils(unittest.TestCase):
         Test adding a city to a player when player already owns city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=20000)
-        success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
+        self.utils.create_player(player_id='foo', balance=20000)
+        success, result = self.utils.add_city_to_player(player_id='foo', city_id='c1001')
         self.assertTrue(success)
-        self.assertEqual(10000, result.get('balance'))
+        self.assertEqual(17222, result.get('balance'))
 
-        success, result = utils.add_city_to_player(player_id='foo', city_id='a1')
+        success, result = self.utils.add_city_to_player(player_id='foo', city_id='c1001')
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
 
@@ -185,9 +187,9 @@ class TestUtils(unittest.TestCase):
         Test adding a plane to a player
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=200)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
-                                                    current_city_id='a1')
+        self.utils.create_player(player_id='foo', balance=200)
+        success, result = self.utils.add_plane_to_player(player_id='foo', plane_id='a1',
+                                                         current_city_id='c1001')
         self.assertTrue(success)
         self.assertEqual(0, result.get('balance'))
 
@@ -197,9 +199,9 @@ class TestUtils(unittest.TestCase):
         Test adding a plane to a player that does not exist
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=10000)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='foo123',
-                                                    current_city_id='a1')
+        self.utils.create_player(player_id='foo', balance=10000)
+        success, result = self.utils.add_plane_to_player(player_id='foo', plane_id='foo123',
+                                                         current_city_id='c1001')
         self.assertFalse(success)
         self.assertEqual('Plane does not exist', result)
 
@@ -209,9 +211,9 @@ class TestUtils(unittest.TestCase):
         Test adding a plane to a player when player cannot afford
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=199)
-        success, result = utils.add_plane_to_player(player_id='foo', plane_id='a1',
-                                                    current_city_id='a1')
+        self.utils.create_player(player_id='foo', balance=199)
+        success, result = self.utils.add_plane_to_player(player_id='foo', plane_id='a1',
+                                                         current_city_id='c1001')
         self.assertFalse(success)
         self.assertEqual('Purchase failed', result)
 
@@ -221,31 +223,30 @@ class TestUtils(unittest.TestCase):
         Test adding a jobs to a plane
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=100000)
-        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a2')
-        utils.add_city_to_player(player_id='foo', city_id='a3')
+        self.utils.create_player(player_id='foo', balance=100000)
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1002')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1003')
 
         # Get the new cities and plane added to the player
-        _, result = utils.get_player_attributes(player_id='foo',
-                                                attributes_to_get=['cities', 'planes'])
+        _, result = self.utils.get_player_attributes(player_id='foo',
+                                                     attributes_to_get=['cities', 'planes'])
 
         plane_1_id, _ = result.get('planes').popitem()
         player_cities = result.get('cities')
 
         # Generate some random jobs
-        jobs = utils.generate_random_jobs(player_cities=player_cities, current_city_id='a1')
+        jobs = self.utils.generate_random_jobs(player_cities=player_cities, current_city_id='c1001')
 
         # Add the jobs to the plane
-        success, _ = utils.add_jobs_to_plane(
+        success, _ = self.utils.add_jobs_to_plane(
             player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
         self.assertTrue(success)
 
         # Check the jobs added to the plane
-        _, result = utils.get_player_attributes(player_id='foo',
-                                                attributes_to_get=['planes'])
-
+        _, result = self.utils.get_player_attributes(player_id='foo',
+                                                     attributes_to_get=['planes'])
         self.assertEqual(30, len(result['planes'][plane_1_id]['loaded_jobs']))
 
     @moto.mock_dynamodb2
@@ -254,27 +255,28 @@ class TestUtils(unittest.TestCase):
         Test removing jobs from a city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=100000)
-        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a2')
-        utils.add_city_to_player(player_id='foo', city_id='a3')
+        self.utils.create_player(player_id='foo', balance=100000)
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1002')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1003')
 
         # Get the new cities added to the player
-        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
         player_cities = result.get('cities')
 
-        jobs, _ = utils.update_city_with_new_jobs(player_id='foo', city_id='a1',
-                                                  player_cities=player_cities)
+        jobs, _ = self.utils.update_city_with_new_jobs(player_id='foo', city_id='c1001',
+                                                       player_cities=player_cities)
         jobs_ids_to_remove = [
             jobs.popitem()[0],
             jobs.popitem()[0],
             jobs.popitem()[0]
         ]
-        utils.remove_jobs_from_city(player_id='foo', city_id='a1', list_of_jobs=jobs_ids_to_remove)
+        self.utils.remove_jobs_from_city(player_id='foo', city_id='c1001',
+                                         list_of_jobs=jobs_ids_to_remove)
 
-        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
-        city_jobs = result.get('cities').get('a1').get('jobs')
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['cities'])
+        city_jobs = result.get('cities').get('c1001').get('jobs')
         print(len(city_jobs))
 
     @moto.mock_dynamodb2
@@ -283,42 +285,45 @@ class TestUtils(unittest.TestCase):
         Test unloading a plane once it has landed
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='foo', balance=100000)
-        utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a1')
-        utils.add_city_to_player(player_id='foo', city_id='a2')
-        utils.add_city_to_player(player_id='foo', city_id='a3')
+        self.utils.create_player(player_id='foo', balance=100000)
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1001')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1002')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1003')
 
         # Get the new cities and plane added to the player
-        _, result = utils.get_player_attributes(player_id='foo',
-                                                attributes_to_get=['cities', 'planes'])
+        _, result = self.utils.get_player_attributes(player_id='foo',
+                                                     attributes_to_get=['cities', 'planes'])
 
         plane_1_id, plane_1_values = result.get('planes').popitem()
         player_cities = result.get('cities')
 
         # Generate some random jobs
-        jobs = utils.generate_random_jobs(player_cities=player_cities,
-                                          current_city_id='a1', count=8)
+        jobs = self.utils.generate_random_jobs(player_cities=player_cities,
+                                               current_city_id='c1001', count=8)
 
         # Add the jobs to the plane
-        success, _ = utils.add_jobs_to_plane(
+        success, _ = self.utils.add_jobs_to_plane(
             player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
         self.assertTrue(success)
 
-        utils.depart_plane(player_id='foo', plane_id=plane_1_id, destination_city_id='a2', eta=1)
+        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id,
+                                destination_city_id='c1002', eta=1)
 
-        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        # Get the updated plane
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
         _, plane_1_values = result.get('planes').popitem()
-        print(plane_1_values)
 
-        success, result = utils.handle_plane_landed(player_id='foo', plane_id=plane_1_id,
-                                                    plane=plane_1_values)
+        # Check the result of handling the plane landing
+        success, result = self.utils.handle_plane_landed(player_id='foo', plane_id=plane_1_id,
+                                                         plane=plane_1_values)
         self.assertTrue(success)
         self.assertLess(69800, int(result.get('balance')))
 
-        _, result = utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        # Check the updated plane for the correct values after landing the plane
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
         _, plane_1_values = result.get('planes').popitem()
         self.assertEqual(0, plane_1_values['eta'])
         self.assertEqual('none', plane_1_values['destination_city_id'])
-        self.assertEqual('a2', plane_1_values['current_city_id'])
+        self.assertEqual('c1002', plane_1_values['current_city_id'])
         self.assertGreater(8, len(plane_1_values['loaded_jobs']))
