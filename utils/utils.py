@@ -270,6 +270,9 @@ def depart_plane(player_id, plane_id, plane, destination_city_id, eta=None):
                      f'player {player_id}. Destination city: {destination_city_id}')
 
         distance = get_distance_between_cities(plane.get('current_city_id'), destination_city_id)
+        if distance > plane.get('flight_range'):
+            return False, 'Destination city is beyond the range of the plane'
+
         calculated_eta = get_seconds_between_cities(distance, plane.get('speed'))
 
         result = table.update_item(

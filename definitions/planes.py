@@ -10,7 +10,7 @@ planes = {
                 weight=1,
                 capacity_type='P',
                 capacity=4,
-                flight_range=1,
+                flight_range=600,
                 size_class=1),
 
     'a1': Plane(plane_id='a1',
@@ -20,6 +20,6 @@ planes = {
                 weight=1,
                 capacity_type='C',
                 capacity=4,
-                flight_range=1,
+                flight_range=900,
                 size_class=1)
 }

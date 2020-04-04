@@ -304,9 +304,9 @@ class TestUtils(unittest.TestCase):
         """
         shared_test_utils.create_table()
         self.utils.create_player(player_id='foo', balance=100000)
-        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1001')
-        self.utils.add_city_to_player(player_id='foo', city_id='c1001')
-        self.utils.add_city_to_player(player_id='foo', city_id='c1002')
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1005')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1005')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1036')
         self.utils.add_city_to_player(player_id='foo', city_id='c1003')
 
         # Get the new cities and plane added to the player
@@ -318,7 +318,7 @@ class TestUtils(unittest.TestCase):
 
         # Generate some random jobs
         jobs = self.utils.generate_random_jobs(player_cities=player_cities,
-                                               current_city_id='c1001', count=8)
+                                               current_city_id='c1005', count=8)
 
         # Add the jobs to the plane
         success, _ = self.utils.add_jobs_to_plane(
@@ -326,7 +326,7 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(success)
 
         self.utils.depart_plane(player_id='foo', plane_id=plane_1_id, plane=plane_1_values,
-                                destination_city_id='c1002', eta=1)
+                                destination_city_id='c1036', eta=1)
 
         # Get the updated plane
         _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
@@ -336,20 +336,58 @@ class TestUtils(unittest.TestCase):
         success, result = self.utils.handle_plane_landed(player_id='foo', plane_id=plane_1_id,
                                                          plane=plane_1_values)
         self.assertTrue(success)
-        self.assertLess(69800, int(result.get('balance')))
+        self.assertLess(28080, int(result.get('balance')))
 
         # Check the updated plane for the correct values after landing the plane
         _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
         _, plane_1_values = result.get('planes').popitem()
         self.assertEqual(0, plane_1_values['eta'])
         self.assertEqual('none', plane_1_values['destination_city_id'])
-        self.assertEqual('c1002', plane_1_values['current_city_id'])
+        self.assertEqual('c1036', plane_1_values['current_city_id'])
         self.assertGreater(8, len(plane_1_values['loaded_jobs']))
 
     @moto.mock_dynamodb2
     def test_depart_plane(self):
         """
         Test departing a plane
+        """
+        shared_test_utils.create_table()
+        self.utils.create_player(player_id='foo', balance=100000)
+        self.utils.add_plane_to_player(player_id='foo', plane_id='a1', current_city_id='c1005')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1005')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1036')
+        self.utils.add_city_to_player(player_id='foo', city_id='c1003')
+
+        # Get the new cities and plane added to the player
+        _, result = self.utils.get_player_attributes(player_id='foo',
+                                                     attributes_to_get=['cities', 'planes'])
+
+        plane_1_id, plane_1_values = result.get('planes').popitem()
+        player_cities = result.get('cities')
+
+        # Generate some random jobs
+        jobs = self.utils.generate_random_jobs(player_cities=player_cities,
+                                               current_city_id='c1005', count=8)
+
+        # Add the jobs to the plane
+        success, _ = self.utils.add_jobs_to_plane(
+            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
+        self.assertTrue(success)
+
+        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id, plane=plane_1_values,
+                                destination_city_id='c1036')
+
+        # Get the updated plane
+        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
+        _, plane_1_values = result.get('planes').popitem()
+        self.assertEqual(4145, plane_1_values.get('eta'))
+        self.assertEqual('c1036', plane_1_values.get('destination_city_id'))
+        self.assertEqual(8, len(plane_1_values.get('loaded_jobs')))
+
+    @moto.mock_dynamodb2
+    def test_depart_plane_too_far(self):
+        """
+        Test departing a plane with a distance beyond the planes range
         """
         shared_test_utils.create_table()
         self.utils.create_player(player_id='foo', balance=100000)
@@ -363,23 +401,9 @@ class TestUtils(unittest.TestCase):
                                                      attributes_to_get=['cities', 'planes'])
 
         plane_1_id, plane_1_values = result.get('planes').popitem()
-        player_cities = result.get('cities')
 
-        # Generate some random jobs
-        jobs = self.utils.generate_random_jobs(player_cities=player_cities,
-                                               current_city_id='c1001', count=8)
+        success, result = self.utils.depart_plane(player_id='foo', plane_id=plane_1_id,
+                                                  plane=plane_1_values, destination_city_id='c1002')
 
-        # Add the jobs to the plane
-        success, _ = self.utils.add_jobs_to_plane(
-            player_id='foo', plane_id=plane_1_id, list_of_jobs=jobs)
-        self.assertTrue(success)
-
-        self.utils.depart_plane(player_id='foo', plane_id=plane_1_id, plane=plane_1_values,
-                                destination_city_id='c1002')
-
-        # Get the updated plane
-        _, result = self.utils.get_player_attributes(player_id='foo', attributes_to_get=['planes'])
-        _, plane_1_values = result.get('planes').popitem()
-        self.assertEqual(74225, plane_1_values.get('eta'))
-        self.assertEqual('c1002', plane_1_values.get('destination_city_id'))
-        self.assertEqual(8, len(plane_1_values.get('loaded_jobs')))
+        self.assertFalse(success)
+        self.assertEqual('Destination city is beyond the range of the plane', result)
