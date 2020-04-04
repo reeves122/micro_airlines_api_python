@@ -5,7 +5,6 @@ import unittest
 import moto
 
 from models.player import Player
-from utils import utils
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +21,9 @@ class TestPlayer(unittest.TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 
+        from utils import utils
         from micro_airlines_api import app
+        self.utils = utils
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
         self.test_player_1 = Player(player_id='test_player_1', balance=100000)
@@ -43,7 +44,7 @@ class TestPlayer(unittest.TestCase):
         Test getting a player
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='test_player_1', balance=100000)
+        self.utils.create_player(player_id='test_player_1', balance=100000)
         result = self.http_client.get('/v1/player')
         self.assertEqual({'player_id': 'test_player_1', 'balance': 100000}, result.get_json())
         self.assertEqual(200, result.status_code)
@@ -75,7 +76,7 @@ class TestPlayer(unittest.TestCase):
         Test creating a player that already exists
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id='test_player_1', balance=100000)
+        self.utils.create_player(player_id='test_player_1', balance=100000)
         result = self.http_client.post('/v1/player')
         self.assertEqual('Player "test_player_1" already exists', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)

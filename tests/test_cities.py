@@ -6,7 +6,6 @@ import time
 import moto
 
 from definitions.cities import cities
-from utils import utils
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +22,9 @@ class TestCities(unittest.TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 
+        from utils import utils
         from micro_airlines_api import app
+        self.utils = utils
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
         self.player_name = 'test_player_1'
@@ -44,15 +45,11 @@ class TestCities(unittest.TestCase):
         Test getting cities
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
+        self.utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
 
         result = self.http_client.get('/v1/cities')
-        self.assertEqual({
-            'cities': {
-                'c1001': cities['c1001'].serialize()
-            }
-        }, result.get_json())
+        self.assertEqual(cities['c1001'].city_id, result.get_json()['cities']['c1001']['city_id'])
         self.assertEqual(200, result.status_code)
 
     @moto.mock_dynamodb2
@@ -71,18 +68,18 @@ class TestCities(unittest.TestCase):
         Test creating a city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=11000)
+        self.utils.create_player(player_id=self.player_name, balance=11000)
 
         # Make the request and assert the response
         result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual({
-            'balance': 1000
+            'balance': 8222
         }, result.get_json())
         self.assertEqual(201, result.status_code)
 
         # Query the table to validate the result
-        result = utils.table.get_item(Key={'player_id': self.player_name}).get('Item')
-        self.assertEqual(cities['a0'].serialize(), result['cities']['c1001'])
+        result = self.utils.table.get_item(Key={'player_id': self.player_name}).get('Item')
+        self.assertEqual(cities['c1001'].serialize(), result['cities']['c1001'])
 
     @moto.mock_dynamodb2
     def test_cities_post_missing_body(self):
@@ -109,7 +106,7 @@ class TestCities(unittest.TestCase):
         Test creating a city when player does not exist
         """
         shared_test_utils.create_table()
-        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
+        result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -119,10 +116,10 @@ class TestCities(unittest.TestCase):
         Test creating a city when player cant afford it
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=1000)
+        self.utils.create_player(player_id=self.player_name, balance=1000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
+        result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -132,14 +129,14 @@ class TestCities(unittest.TestCase):
         Test creating a city when player already owns it
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.create_player(player_id=self.player_name, balance=100000)
 
         # Purchase the city first
-        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
+        result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual(201, result.status_code)
 
         # Try to purchase the same city again
-        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
+        result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual('Purchase failed', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -149,20 +146,20 @@ class TestCities(unittest.TestCase):
         Test getting jobs for a city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_city_to_player(player_id=self.player_name, city_id='a1')
-        utils.add_city_to_player(player_id=self.player_name, city_id='a2')
-        utils.add_city_to_player(player_id=self.player_name, city_id='a3')
-        utils.add_city_to_player(player_id=self.player_name, city_id='a4')
+        self.utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1002')
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1003')
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1004')
 
-        result = self.http_client.get('/v1/cities/a1/jobs')
+        result = self.http_client.get('/v1/cities/c1001/jobs')
         self.assertEqual(200, result.status_code)
         self.assertEqual(30, len(result.get_json()['jobs']))
         jobs_expire = result.get_json()['jobs_expire']
         self.assertLess(time.time(), jobs_expire)
 
         # Make the same call again to see if cached jobs are used
-        result = self.http_client.get('/v1/cities/a1/jobs')
+        result = self.http_client.get('/v1/cities/c1001/jobs')
         self.assertEqual(jobs_expire, result.get_json()['jobs_expire'])
 
     @moto.mock_dynamodb2
@@ -171,11 +168,11 @@ class TestCities(unittest.TestCase):
         Test getting jobs for a city when the city is not owned
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_city_to_player(player_id=self.player_name, city_id='a1')
-        utils.add_city_to_player(player_id=self.player_name, city_id='a3')
+        self.utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1002')
 
-        result = self.http_client.get('/v1/cities/a2/jobs')
+        result = self.http_client.get('/v1/cities/c1003/jobs')
         self.assertEqual(400, result.status_code)
         self.assertEqual('Player does not own city', result.get_data().decode('utf-8'))
 
@@ -185,9 +182,9 @@ class TestCities(unittest.TestCase):
         Test getting jobs for a city when player only has one city
         """
         shared_test_utils.create_table()
-        utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_city_to_player(player_id=self.player_name, city_id='a1')
+        self.utils.create_player(player_id=self.player_name, balance=100000)
+        self.utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
 
-        result = self.http_client.get('/v1/cities/a1/jobs')
+        result = self.http_client.get('/v1/cities/c1001/jobs')
         self.assertEqual(400, result.status_code)
         self.assertEqual('Player does not own enough cities', result.get_data().decode('utf-8'))

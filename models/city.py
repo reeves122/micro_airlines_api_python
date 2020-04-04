@@ -1,4 +1,5 @@
 import time
+from decimal import Decimal
 
 from models.base_model import BaseModel
 
@@ -12,11 +13,10 @@ class City(BaseModel):
         self.country = country
         self.cost = cost
         self.city_class = city_class
-        self.population = population
+        self.population = Decimal(str(population))
         self.layover_size = layover_size
         self.layovers = {}
         self.jobs = {}
         self.jobs_expire = int(time.time())
-        self.latitude = latitude
-        self.longitude = longitude
-
+        self.latitude = Decimal(str(latitude))
+        self.longitude = Decimal(str(longitude))
