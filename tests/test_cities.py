@@ -45,12 +45,12 @@ class TestCities(unittest.TestCase):
         """
         shared_test_utils.create_table()
         utils.create_player(player_id=self.player_name, balance=100000)
-        utils.add_city_to_player(player_id=self.player_name, city_id='a1')
+        utils.add_city_to_player(player_id=self.player_name, city_id='c1001')
 
         result = self.http_client.get('/v1/cities')
         self.assertEqual({
             'cities': {
-                'a1': cities['a1'].serialize()
+                'c1001': cities['c1001'].serialize()
             }
         }, result.get_json())
         self.assertEqual(200, result.status_code)
@@ -74,7 +74,7 @@ class TestCities(unittest.TestCase):
         utils.create_player(player_id=self.player_name, balance=11000)
 
         # Make the request and assert the response
-        result = self.http_client.post('/v1/cities', json={'city': 'a0'})
+        result = self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.assertEqual({
             'balance': 1000
         }, result.get_json())
@@ -82,7 +82,7 @@ class TestCities(unittest.TestCase):
 
         # Query the table to validate the result
         result = utils.table.get_item(Key={'player_id': self.player_name}).get('Item')
-        self.assertEqual(cities['a0'].serialize(), result['cities']['a0'])
+        self.assertEqual(cities['a0'].serialize(), result['cities']['c1001'])
 
     @moto.mock_dynamodb2
     def test_cities_post_missing_body(self):
