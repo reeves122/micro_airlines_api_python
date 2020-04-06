@@ -133,3 +133,54 @@ resource "aws_api_gateway_integration" "root_PUT" {
   uri                     = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${aws_lambda_function.micro_airlines_api_lambda.arn}/invocations"
   credentials             = "${aws_iam_role.invocation_role.arn}"
 }
+
+# OPTIONS
+resource "aws_api_gateway_method" "root_OPTIONS" {
+  rest_api_id      = "${aws_api_gateway_rest_api.api.id}"
+  resource_id      = "${aws_api_gateway_resource.root_proxy.id}"
+  http_method      = "OPTIONS"
+  authorization    = "NONE"
+  api_key_required = true
+}
+
+resource "aws_api_gateway_method_response" "root_OPTIONS" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.root_proxy.id}"
+    http_method   = "${aws_api_gateway_method.root_OPTIONS.http_method}"
+    status_code   = "200"
+
+    response_models {
+        "application/json" = "Empty"
+    }
+
+    response_parameters {
+        "method.response.header.Access-Control-Allow-Headers" = true,
+        "method.response.header.Access-Control-Allow-Methods" = true,
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+}
+
+resource "aws_api_gateway_integration" "root_OPTIONS" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.root_proxy.id}"
+    http_method   = "${aws_api_gateway_method.root_OPTIONS.http_method}"
+    type          = "MOCK"
+
+    request_templates {
+        "application/json" = "{ statusCode: 200 }"
+    }
+}
+
+resource "aws_api_gateway_integration_response" "root_OPTIONS" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.root_proxy.id}"
+    http_method   = "${aws_api_gateway_method.root_OPTIONS.http_method}"
+    status_code   = "${aws_api_gateway_method_response.root_OPTIONS.status_code}"
+
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Headers" = "'*'",
+        "method.response.header.Access-Control-Allow-Methods" = "'*'",
+        "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    }
+}
+
