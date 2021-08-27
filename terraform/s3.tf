@@ -12,7 +12,7 @@ resource "aws_s3_bucket" "bucket" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "dataproducts_archive_bucket_public_access_block" {
+resource "aws_s3_bucket_public_access_block" "bucket_public_access_block" {
   bucket = "${aws_s3_bucket.bucket.id}"
   block_public_acls       = true
   block_public_policy     = true
