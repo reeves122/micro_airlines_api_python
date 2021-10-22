@@ -21,7 +21,7 @@ def get_available_cities():
 
     :return: API Gateway dictionary response
     """
-    logger.info(f'Received GET request for path: "/v1/market/cities"')
+    logger.info('Received GET request for path: "/v1/market/cities"')
     cities_serialized = [city.serialize() for city_id, city in cities.items()]
     return make_response({'cities': cities_serialized}, 200)
 
@@ -33,7 +33,7 @@ def get_available_planes():
 
     :return: API Gateway dictionary response
     """
-    logger.info(f'Received GET request for path: "/v1/market/planes"')
+    logger.info('Received GET request for path: "/v1/market/planes"')
     # TODO: Implement time-based market for planes
     # player_id = utils.get_username()
     #

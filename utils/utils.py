@@ -402,7 +402,7 @@ def remove_jobs_from_city(player_id, city_id, list_of_jobs):
 
         result = table.update_item(
             Key={'player_id': player_id},
-            UpdateExpression=f"REMOVE " + ', '.join(update_expressions),
+            UpdateExpression="REMOVE " + ', '.join(update_expressions),
             ReturnValues="UPDATED_NEW")
 
     except ClientError as e:

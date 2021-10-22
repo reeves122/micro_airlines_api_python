@@ -172,7 +172,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with a bad player id
         """
         shared_test_utils.create_table()
-        result = self.http_client.put(f'/v1/planes/12345/load', json={'jobs': 'foo'})
+        result = self.http_client.put('/v1/planes/12345/load', json={'jobs': 'foo'})
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -182,7 +182,7 @@ class TestPlanes(unittest.TestCase):
         Test departing a plane with a bad player id
         """
         shared_test_utils.create_table()
-        result = self.http_client.put(f'/v1/planes/12345/depart',
+        result = self.http_client.put('/v1/planes/12345/depart',
                                       json={'jobs': 'foo', 'destination_city_id': 'foo'})
         self.assertEqual('Player does not exist', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
@@ -193,9 +193,9 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with invalid plane
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
-        result = self.http_client.put(f'/v1/planes/12345/load', json={'jobs': 'foo'})
+        result = self.http_client.put('/v1/planes/12345/load', json={'jobs': 'foo'})
         self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
 
@@ -205,9 +205,9 @@ class TestPlanes(unittest.TestCase):
         Test departing a plane with invalid plane
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
-        result = self.http_client.put(f'/v1/planes/12345/depart',
+        result = self.http_client.put('/v1/planes/12345/depart',
                                       json={'jobs': 'foo', 'destination_city_id': 'foo'})
         self.assertEqual('Invalid plane_id', result.get_data().decode('utf-8'))
         self.assertEqual(400, result.status_code)
@@ -218,7 +218,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
@@ -249,7 +249,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with too many jobs
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
         self.http_client.post('/v1/cities', json={'city': 'c1003'})
@@ -273,7 +273,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with too many already loaded
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
@@ -302,7 +302,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with an expired job
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
@@ -334,7 +334,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with a bad job id
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1001'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
@@ -354,7 +354,7 @@ class TestPlanes(unittest.TestCase):
         Test loading a plane with wrong type of job
         """
         shared_test_utils.create_table()
-        self.http_client.post(f'/v1/player')
+        self.http_client.post('/v1/player')
         self.http_client.post('/v1/planes', json={'plane': 'a1', 'city': 'c1002'})
         self.http_client.post('/v1/cities', json={'city': 'c1002'})
         self.http_client.post('/v1/cities', json={'city': 'c1003'})
