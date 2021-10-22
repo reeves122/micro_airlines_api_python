@@ -380,7 +380,7 @@ def update_city_with_new_jobs(player_id, city_id, player_cities):
         },
         ReturnValues="UPDATED_NEW")
 
-    return new_jobs, jobs_expire
+    return new_jobs, int(jobs_expire)
 
 
 def remove_jobs_from_city(player_id, city_id, list_of_jobs):
