@@ -83,7 +83,6 @@ def plane_load(plane_id):
     job_ids = body.get('loaded_jobs')
     source_city = player_cities.get(player_plane.get('current_city_id'))
 
-    # Check if the plane has capacity
     if len(job_ids) > player_plane.get('capacity') - len(player_plane.get('loaded_jobs')):
         return make_response('Not enough capacity', 400)
 

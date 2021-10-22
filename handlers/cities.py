@@ -49,7 +49,7 @@ def create_city():
     success, result = utils.add_city_to_player(player_id=player_id, city_id=requested_city_id)
     if success:
         return make_response({
-            'balance': result.get('balance')
+            'balance': int(result.get('balance'))
         }, 201)
     else:
         return make_response(result, 400)
