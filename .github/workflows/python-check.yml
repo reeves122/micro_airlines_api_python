@@ -1,13 +1,9 @@
-name: python
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
 
 jobs:
-  build:
+  python-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
