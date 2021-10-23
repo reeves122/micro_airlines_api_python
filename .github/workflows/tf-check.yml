@@ -15,7 +15,26 @@ jobs:
     environment: main
     steps:
       - uses: actions/checkout@v2
+
       - uses: hashicorp/setup-terraform@v1.3.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: pip install
+        shell: bash
+        run: |
+          pip install -t ./build -r requirements.txt
+          cp -R src/* build/
+
+      - name: create zip
+        shell: bash
+        working-directory: build
+        run: |
+          ls -la
+          zip -r ../terraform/package.zip .
 
       - name: check
         shell: bash
