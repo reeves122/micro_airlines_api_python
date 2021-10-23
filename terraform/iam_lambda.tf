@@ -1,6 +1,5 @@
-
-resource "aws_iam_role" "micro_airlines_api_lambda_role" {
-  name = "${var.name}-${var.env}"
+resource "aws_iam_role" "lambda" {
+  name = "${local.name}_lambda"
 
   assume_role_policy = <<EOF
 {
@@ -19,9 +18,9 @@ resource "aws_iam_role" "micro_airlines_api_lambda_role" {
 EOF
 }
 
-resource "aws_iam_role_policy" "micro_airlines_api_lambda_role_policy" {
-  name = "${var.name}-${var.env}"
-  role = aws_iam_role.micro_airlines_api_lambda_role.id
+resource "aws_iam_role_policy" "lambda" {
+  name = "${local.name}_lambda"
+  role = aws_iam_role.lambda.id
 
   policy = <<EOF
 {
@@ -46,8 +45,8 @@ resource "aws_iam_role_policy" "micro_airlines_api_lambda_role_policy" {
                 "dynamodb:Query"
             ],
             "Resource": [
-                "${aws_dynamodb_table.players_table.arn}",
-                "${aws_dynamodb_table.players_table.arn}*"
+                "${aws_dynamodb_table.players.arn}",
+                "${aws_dynamodb_table.players.arn}*"
             ]
         }
     ]

@@ -1,13 +1,13 @@
-resource "aws_api_gateway_api_key" "admin_key" {
+resource "aws_api_gateway_api_key" "admin" {
   name = "admin"
 }
 
-resource "aws_api_gateway_usage_plan" "admin_plan" {
+resource "aws_api_gateway_usage_plan" "admin" {
   name = "admin"
 
   api_stages {
-    api_id = aws_api_gateway_rest_api.api.id
-    stage  = aws_api_gateway_deployment.deployment.stage_name
+    api_id = aws_api_gateway_rest_api.this.id
+    stage  = aws_api_gateway_deployment.this.stage_name
   }
 
   throttle_settings {
@@ -16,8 +16,8 @@ resource "aws_api_gateway_usage_plan" "admin_plan" {
   }
 }
 
-resource "aws_api_gateway_usage_plan_key" "admin_plan_key" {
-  key_id        = aws_api_gateway_api_key.admin_key.id
+resource "aws_api_gateway_usage_plan_key" "admin" {
+  key_id        = aws_api_gateway_api_key.admin.id
   key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.admin_plan.id
+  usage_plan_id = aws_api_gateway_usage_plan.admin.id
 }

@@ -1,7 +1,7 @@
-resource "aws_lambda_function" "micro_airlines_api_lambda" {
+resource "aws_lambda_function" "this" {
   filename      = "../package.zip"
-  function_name = "${var.name}-${var.env}"
-  role          = aws_iam_role.micro_airlines_api_lambda_role.arn
+  function_name = local.name
+  role          = aws_iam_role.lambda.arn
   handler       = "micro_airlines_api.lambda_handler"
   runtime       = "python3.7"
   timeout       = "5"
@@ -11,7 +11,7 @@ resource "aws_lambda_function" "micro_airlines_api_lambda" {
 
   environment {
     variables = {
-      DYNAMODB_PLAYERS_TABLE = "${var.name}-players-${var.env}"
+      DYNAMODB_PLAYERS_TABLE = aws_dynamodb_table.players.name
     }
   }
 }
