@@ -5,7 +5,7 @@ import time
 
 import moto
 
-from src.definitions.cities import cities
+from definitions.cities import cities
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)

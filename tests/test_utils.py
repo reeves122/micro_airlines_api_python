@@ -6,7 +6,7 @@ from flask import request
 from flask import Flask
 import moto
 
-from src.definitions.cities import cities
+from definitions.cities import cities
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +23,7 @@ class TestUtils(unittest.TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 
-        from src.utils import utils
+        from utils import utils
         self.utils = utils
 
         self.player_name = 'test_player_1'

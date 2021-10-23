@@ -5,7 +5,7 @@ import time
 
 import moto
 
-from src.definitions.planes import planes
+from definitions.planes import planes
 from tests import shared_test_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -21,8 +21,8 @@ class TestPlanes(unittest.TestCase):
         # These are needed to avoid a credential error when testing
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
-        from src.utils import utils
-        from src.micro_airlines_api import app
+        from utils import utils
+        from micro_airlines_api import app
         self.utils = utils
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
