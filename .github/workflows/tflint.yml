@@ -1,0 +1,18 @@
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v1.3.2
+
+      - name: terraform fmt
+        shell: bash
+        run: terraform fmt -recursive -check
+
+      - name: tflint
+        shell: bash
+        run: docker run --rm -v $(pwd):/data -t ghcr.io/terraform-linters/tflint-bundle@v0.33.0 --enable-plugin=aws
