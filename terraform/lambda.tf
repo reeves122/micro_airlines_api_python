@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "this" {
-  filename      = "../package.zip"
+  filename      = "package.zip"
   function_name = local.name
   role          = aws_iam_role.lambda.arn
   handler       = "micro_airlines_api.lambda_handler"
@@ -7,7 +7,7 @@ resource "aws_lambda_function" "this" {
   timeout       = "5"
   memory_size   = 128
 
-  source_code_hash = filebase64sha256("../package.zip")
+  source_code_hash = filebase64sha256("package.zip")
 
   environment {
     variables = {

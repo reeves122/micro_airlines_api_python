@@ -16,7 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: hashicorp/setup-terraform@v1.3.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: build
+        shell: bash
+        run: |
+          pip install -t ./build -r requirements.txt
+          cp -R src/* build/
+          cd build/
+          zip -r ../terraform/package.zip .
 
       - name: plan
         shell: bash

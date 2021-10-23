@@ -6,9 +6,21 @@ resource "aws_api_gateway_deployment" "this" {
   rest_api_id = aws_api_gateway_rest_api.this.id
 
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.this.body))
-  }
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.root_proxy.id,
 
+      aws_api_gateway_method.get.id,
+      aws_api_gateway_method.put.id,
+      aws_api_gateway_method.post.id,
+      aws_api_gateway_method.options.id,
+
+      aws_api_gateway_integration.get.id,
+      aws_api_gateway_integration.put.id,
+      aws_api_gateway_integration.post.id,
+      aws_api_gateway_integration.options.id,
+
+    ]))
+  }
   lifecycle {
     create_before_destroy = true
   }

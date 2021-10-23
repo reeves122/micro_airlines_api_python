@@ -133,3 +133,4 @@ package.zip
 *.tfstate
 *.tfstate.backup
 .terraform/
+local.tf
