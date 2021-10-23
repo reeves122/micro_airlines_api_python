@@ -12,6 +12,7 @@ env:
 
 jobs:
   tf-plan:
+    environment: main
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
