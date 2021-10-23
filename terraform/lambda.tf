@@ -11,7 +11,7 @@ resource "aws_lambda_function" "micro_airlines_api_lambda" {
 
   environment {
     variables = {
-      DYNAMODB_PLAYERS_TABLE             = "${var.name}-players-${var.env}"
+      DYNAMODB_PLAYERS_TABLE = "${var.name}-players-${var.env}"
     }
   }
 }

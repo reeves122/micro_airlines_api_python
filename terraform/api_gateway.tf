@@ -10,8 +10,8 @@ resource "aws_api_gateway_deployment" "deployment" {
     aws_api_gateway_integration.put
   ]
 
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = var.env
+  rest_api_id       = aws_api_gateway_rest_api.api.id
+  stage_name        = var.env
   stage_description = "Deployed ${timestamp()}"
 
   lifecycle {
@@ -22,5 +22,5 @@ resource "aws_api_gateway_deployment" "deployment" {
 resource "aws_api_gateway_resource" "root_proxy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part = "{proxy+}"
+  path_part   = "{proxy+}"
 }
