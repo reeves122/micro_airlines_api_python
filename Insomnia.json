@@ -1,0 +1,422 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2021-10-23T23:09:23.737Z",
+  "__export_source": "insomnia.desktop.app:v2021.5.3",
+  "resources": [
+    {
+      "_id": "req_e479c5c59ef64aed82d351707b7e1ffa",
+      "parentId": "fld_e8607cffcb53491dad61aefc88fc7e6e",
+      "modified": 1635030428412,
+      "created": 1635029994572,
+      "url": "{{ _.url }}/v1/cities",
+      "name": "/v1/cities",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846933,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_e8607cffcb53491dad61aefc88fc7e6e",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635030479567,
+      "created": 1635030424822,
+      "name": "City",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1635030449869,
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "parentId": null,
+      "modified": 1635029771853,
+      "created": 1635029756765,
+      "name": "micro_airlines_api",
+      "description": "",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_fff7610fc0af460eb012e55d6b6882f1",
+      "parentId": "fld_e8607cffcb53491dad61aefc88fc7e6e",
+      "modified": 1635030430471,
+      "created": 1635030040155,
+      "url": "{{ _.url }}/v1/cities",
+      "name": "/v1/cities",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"city\": \"c1002\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_70586589c51b49e799628e9ac0d421db"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846883,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_511ec211bfec4665b16d88712036b5e0",
+      "parentId": "fld_993b5c28074847f680b85e5b57676a90",
+      "modified": 1635030440092,
+      "created": 1635030298152,
+      "url": "{{ _.url }}/v1/market/cities",
+      "name": "/v1/market/cities",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846720.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_993b5c28074847f680b85e5b57676a90",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635030435842,
+      "created": 1635030435842,
+      "name": "Market",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1635030435842,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_62a1d74b4a8645bbbb04f7dc479164d6",
+      "parentId": "fld_993b5c28074847f680b85e5b57676a90",
+      "modified": 1635030444600,
+      "created": 1635030317632,
+      "url": "{{ _.url }}/v1/market/planes",
+      "name": "/v1/market/planes",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846670.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_1eadd23e010640a79e81e69ff1a63fe3",
+      "parentId": "fld_ac2290be80db4c25902b9bebe91b58f5",
+      "modified": 1635030454649,
+      "created": 1635030174370,
+      "url": "{{ _.url }}/v1/planes",
+      "name": "/v1/planes",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846820.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_ac2290be80db4c25902b9bebe91b58f5",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635030484839,
+      "created": 1635030449819,
+      "name": "Planes",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1635030426250,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_5f0f38a50f4145d4a1835f08b57e14ea",
+      "parentId": "fld_ac2290be80db4c25902b9bebe91b58f5",
+      "modified": 1635030461252,
+      "created": 1635030206215,
+      "url": "{{ _.url }}/v1/planes",
+      "name": "/v1/planes",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"plane\": \"a1\", \n\t\"city\": \"c1001\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_eab86e9ba2c341ddba76ee6c54a38d8c"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846770.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_74d3230ef7394ff481579dfee71c1317",
+      "parentId": "fld_ac2290be80db4c25902b9bebe91b58f5",
+      "modified": 1635030470018,
+      "created": 1635030115780,
+      "url": "{{ _.url }}/v1/cities/c1001/jobs",
+      "name": "/v1/cities/<city>/jobs",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846720.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_345432ced8d64e94aad5a6bffa0d3280",
+      "parentId": "fld_ac2290be80db4c25902b9bebe91b58f5",
+      "modified": 1635030471328,
+      "created": 1635030407009,
+      "url": "{{ _.url }}/v1/planes",
+      "name": "/v1/planes/<plane>/load",
+      "description": "",
+      "method": "PUT",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846670.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_86c00f97c1b0438e9a7c0e7320daa108",
+      "parentId": "fld_0ff712e900e94fc8869dcbdd213bf935",
+      "modified": 1635030419891,
+      "created": 1635029846958,
+      "url": "{{ _.url }}/v1/player",
+      "name": "/v1/player",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846958,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_0ff712e900e94fc8869dcbdd213bf935",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635030416658,
+      "created": 1635030416658,
+      "name": "Player",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1635030416658,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_1c6bd0458df14c26826501b0d95b539a",
+      "parentId": "fld_0ff712e900e94fc8869dcbdd213bf935",
+      "modified": 1635030421503,
+      "created": 1635029938235,
+      "url": "{{ _.url }}/v1/player",
+      "name": "/v1/player",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "id": "pair_b192a838353e4d2b9dbbaa61dc80710a",
+          "name": "X-API-KEY",
+          "value": "{{ _.key }}",
+          "description": ""
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1635029846908,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "env_762933886f800a96e914e96bfb67e2ad78f2ec4f",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635030508849,
+      "created": 1635029756768,
+      "name": "Base Environment",
+      "data": {
+        "url": "",
+        "key": ""
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "url",
+          "key"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1635029756768,
+      "_type": "environment"
+    },
+    {
+      "_id": "jar_762933886f800a96e914e96bfb67e2ad78f2ec4f",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635029756770,
+      "created": 1635029756770,
+      "name": "Default Jar",
+      "cookies": [],
+      "_type": "cookie_jar"
+    },
+    {
+      "_id": "spc_f1ccb5644d8844d0be3456213df1f8a8",
+      "parentId": "wrk_c8105502ff004f14b2fc2d3e9fed6551",
+      "modified": 1635029756766,
+      "created": 1635029756766,
+      "fileName": "prod",
+      "contents": "",
+      "contentType": "yaml",
+      "_type": "api_spec"
+    }
+  ]
+}
