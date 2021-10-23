@@ -15,4 +15,4 @@ jobs:
 
       - name: tflint
         shell: bash
-        run: docker run --rm -v $(pwd):/data -t ghcr.io/terraform-linters/tflint-bundle@v0.33.0 --enable-plugin=aws
+        run: docker run --rm -v $(pwd):/data -t ghcr.io/terraform-linters/tflint-bundle --enable-plugin=aws
