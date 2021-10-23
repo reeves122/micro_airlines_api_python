@@ -15,4 +15,5 @@ resource "random_string" "bucket_suffix" {
 
 locals {
   bucket_name = "micro-airlines-api-${var.env}-${random_string.bucket_suffix.result}"
+  lambda_uri = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${aws_lambda_function.micro_airlines_api_lambda.arn}/invocations"
 }
