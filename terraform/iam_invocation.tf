@@ -1,5 +1,5 @@
-resource "aws_iam_role" "invocation_role" {
-  name = "${var.name}-role-${var.env}"
+resource "aws_iam_role" "invocation" {
+  name = "${local.name}_invocation"
 
   assume_role_policy = <<EOF
 {
@@ -18,9 +18,9 @@ resource "aws_iam_role" "invocation_role" {
 EOF
 }
 
-resource "aws_iam_role_policy" "invocation_policy" {
-  name = "${var.name}-role-policy-${var.env}"
-  role = aws_iam_role.invocation_role.id
+resource "aws_iam_role_policy" "invocation" {
+  name = "${local.name}_invocation"
+  role = aws_iam_role.invocation.id
 
   policy = <<EOF
 {
@@ -30,7 +30,7 @@ resource "aws_iam_role_policy" "invocation_policy" {
       "Action": "lambda:InvokeFunction",
       "Effect": "Allow",
       "Resource": [
-        "${aws_lambda_function.micro_airlines_api_lambda.arn}"
+        "${aws_lambda_function.this.arn}"
       ]
     }
   ]

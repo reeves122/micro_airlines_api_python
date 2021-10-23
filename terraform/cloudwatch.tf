@@ -1,4 +1,4 @@
-resource "aws_cloudwatch_log_group" "lambda_proxy_log_group" {
-  name              = "/aws/lambda/${var.name}-${var.env}"
+resource "aws_cloudwatch_log_group" "this" {
+  name              = "/aws/lambda/${local.name}"
   retention_in_days = "3"
 }
