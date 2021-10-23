@@ -18,7 +18,7 @@ class TestMarket(unittest.TestCase):
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
 
-        from micro_airlines_api import app
+        from src.micro_airlines_api import app
         self.assertEqual(app.debug, False)
         self.http_client = app.test_client()
         self.player_name = 'test_player_1'
