@@ -19,6 +19,7 @@ jobs:
 
       - name: plan
         shell: bash
+        working-directory: terraform
         run: |
           export TF_INPUT=${TF_INPUT:-false}
           export TF_IN_AUTOMATION=${TF_IN_AUTOMATION:-true}
