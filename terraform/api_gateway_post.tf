@@ -13,7 +13,7 @@ resource "aws_api_gateway_method" "post" {
 resource "aws_api_gateway_integration" "post" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
   resource_id             = aws_api_gateway_resource.root_proxy.id
-  http_method             = aws_api_gateway_method.put.http_method
+  http_method             = aws_api_gateway_method.post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = local.lambda_uri
